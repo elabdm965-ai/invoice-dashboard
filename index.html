@@ -395,8 +395,30 @@
     overflow:hidden;
   }
 
+  .table-scroll{
+    overflow-x:auto;
+  }
+
+  .table-scroll::-webkit-scrollbar{
+    height:10px;
+  }
+
+  .table-scroll::-webkit-scrollbar-track{
+    background:var(--card);
+  }
+
+  .table-scroll::-webkit-scrollbar-thumb{
+    background:var(--border);
+    border-radius:20px;
+  }
+
+  .table-scroll::-webkit-scrollbar-thumb:hover{
+    background:var(--text-faint);
+  }
+
   table{
     width:100%;
+    min-width:980px;
     border-collapse:collapse;
     font-size:14px;
   }
@@ -744,6 +766,7 @@
       </div>
 
       <div class="table-wrap">
+        <div class="table-scroll">
         <table>
           <thead>
             <tr>
@@ -767,6 +790,7 @@
             </td></tr>
           </tbody>
         </table>
+        </div>
         <div class="pagination" id="pagination" style="display:none;">
           <span id="pagination-info"></span>
           <div class="page-btns" id="pagination-btns"></div>
@@ -916,10 +940,6 @@
           <option value="payable">مستحق علينا</option>
           <option value="receivable">مستحق لنا</option>
         </select>
-      </div>
-      <div class="field span-2">
-        <label>سبب المراجعة</label>
-        <input type="text" id="add-review_reason">
       </div>
       <div class="field span-2 checkbox-field">
         <input type="checkbox" id="add-needs_review">
@@ -1419,7 +1439,7 @@
 
   // ---------- add modal ----------
   document.getElementById('btn-add-invoice').addEventListener('click', function(){
-    ['vendor_name','invoice_number','invoice_date','total_amount','tax_amount','currency','review_reason'].forEach(function(f){
+    ['vendor_name','invoice_number','invoice_date','total_amount','tax_amount','currency'].forEach(function(f){
       document.getElementById('add-' + f).value = '';
     });
     document.getElementById('add-document_type').value = 'invoice';
@@ -1451,7 +1471,7 @@
       direction: document.getElementById('add-direction').value,
       document_type: document.getElementById('add-document_type').value,
       needs_review: document.getElementById('add-needs_review').checked,
-      review_reason: document.getElementById('add-review_reason').value.trim()
+      review_reason: ''
     };
 
     var saveBtn = document.getElementById('btn-add-save');
