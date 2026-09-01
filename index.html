@@ -405,10 +405,22 @@
     overflow-x:auto;
   }
 
-  .table-scroll::-webkit-scrollbar{height:10px;}
-  .table-scroll::-webkit-scrollbar-track{background:var(--card);}
-  .table-scroll::-webkit-scrollbar-thumb{background:var(--border);border-radius:20px;}
-  .table-scroll::-webkit-scrollbar-thumb:hover{background:var(--text-faint);}
+  .table-scroll::-webkit-scrollbar{
+    height:10px;
+  }
+
+  .table-scroll::-webkit-scrollbar-track{
+    background:var(--card);
+  }
+
+  .table-scroll::-webkit-scrollbar-thumb{
+    background:var(--border);
+    border-radius:20px;
+  }
+
+  .table-scroll::-webkit-scrollbar-thumb:hover{
+    background:var(--text-faint);
+  }
 
   table{
     width:100%;
@@ -480,7 +492,10 @@
     margin-bottom:4px;
   }
 
-  .btn-view-reason{font-size:12px; padding:3px 10px;}
+  .btn-view-reason{
+    font-size:12px;
+    padding:3px 10px;
+  }
 
   .icon-btn{
     background:transparent;
@@ -595,6 +610,15 @@
     margin-top:22px;
   }
 
+  .checkbox-field{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    padding-top:8px;
+  }
+
+  .checkbox-field input{width:16px; height:16px;}
+
   /* ---------- SETTINGS ---------- */
   .settings-card{
     background:var(--card);
@@ -604,7 +628,9 @@
     max-width:560px;
   }
 
-  .settings-field{margin-bottom:20px;}
+  .settings-field{
+    margin-bottom:20px;
+  }
 
   .settings-field label{
     display:block;
@@ -781,11 +807,12 @@
               <th data-col="invoice_date">تاريخ الفاتورة<span class="arrow" id="arrow-invoice_date"></span></th>
               <th data-col="needs_review">تحتاج مراجعة<span class="arrow" id="arrow-needs_review"></span></th>
               <th>سبب المراجعة</th>
+              <th>Unicode</th>
               <th>إجراءات</th>
             </tr>
           </thead>
           <tbody id="table-body">
-            <tr><td colspan="10">
+            <tr><td colspan="11">
               <div class="table-empty" id="initial-empty">
                 لم يتم إعداد رابط Webhook بعد. الرجاء الذهاب إلى صفحة الإعدادات لإدخال الرابط.
               </div>
@@ -825,7 +852,7 @@
 
         <div style="display:flex; align-items:center;">
           <button class="btn btn-primary" id="btn-save-settings">حفظ الإعدادات</button>
-          <span class="save-msg" id="save-msg">تم الحفظ بنجاح ✓</span>
+          <span class="save-msg" id="save-msg">تم الحفظ بنجاح</span>
         </div>
       </div>
     </section>
@@ -883,6 +910,10 @@
       <div class="field span-2">
         <label>سبب المراجعة</label>
         <textarea id="edit-review_reason" rows="3"></textarea>
+      </div>
+      <div class="field span-2">
+        <label>Unicode</label>
+        <textarea id="edit-unicode" rows="3"></textarea>
       </div>
     </div>
     <div class="modal-actions">
@@ -958,6 +989,17 @@
   </div>
 </div>
 
+<!-- ================= UNICODE VIEW MODAL ================= -->
+<div class="modal-overlay" id="unicode-modal-overlay">
+  <div class="modal" style="max-width:440px;">
+    <h2 class="modal-title">Unicode</h2>
+    <p id="unicode-modal-text" style="margin:0; line-height:1.7; word-break:break-word;"></p>
+    <div class="modal-actions">
+      <button class="btn" id="btn-unicode-close">إغلاق</button>
+    </div>
+  </div>
+</div>
+
 <script>
 (function(){
   "use strict";
@@ -1026,6 +1068,16 @@
     return html;
   }
 
+  function renderUnicodeCell(value, rowNumber){
+    var text = nullSafeText(value);
+    if (!text) return '<span class="cell-muted">—</span>';
+    var html = '<div class="reason-text">' + escapeHtml(text) + '</div>';
+    if (text.length > 40){
+      html += '<button class="icon-btn btn-view-unicode" data-row="' + rowNumber + '">عرض الكل</button>';
+    }
+    return html;
+  }
+
   // ---------- settings ----------
   function getSettings(){
     try{
@@ -1086,6 +1138,7 @@
     var msg = document.getElementById('save-msg');
     msg.classList.add('show');
     setTimeout(function(){ msg.classList.remove('show'); }, 2200);
+    // if a webhook url now exists and dashboard is empty, try loading
     if (getActiveWebhookUrl() && state.invoices.length === 0 && !state.isLoading){
       refreshData();
     }
@@ -1105,7 +1158,7 @@
 
   // ---------- data fetch ----------
   function setTableMessage(html){
-    document.getElementById('table-body').innerHTML = '<tr><td colspan="10">' + html + '</td></tr>';
+    document.getElementById('table-body').innerHTML = '<tr><td colspan="11">' + html + '</td></tr>';
     document.getElementById('pagination').style.display = 'none';
   }
 
@@ -1135,7 +1188,7 @@
       var now = new Date();
       document.getElementById('last-updated').textContent = 'آخر تحديث: ' + now.toLocaleString('en-US');
       applyFiltersAndRender();
-    }).catch(function(){
+    }).catch(function(err){
       state.isLoading = false;
       state.loadFailed = true;
       setTableMessage(
@@ -1153,25 +1206,31 @@
   // ---------- filtering ----------
   function matchesFilters(item){
     var f = state.filters;
+
     if (f.direction !== "all" && item.direction !== f.direction) return false;
+
     if (f.review !== "all"){
       var needsReview = item.needs_review === true;
       if (f.review === "yes" && !needsReview) return false;
       if (f.review === "no" && needsReview) return false;
     }
+
     if (f.docType !== "all" && item.document_type !== f.docType) return false;
+
     if (f.dateFrom){
       if (isNullish(item.invoice_date) || item.invoice_date < f.dateFrom) return false;
     }
     if (f.dateTo){
       if (isNullish(item.invoice_date) || item.invoice_date > f.dateTo) return false;
     }
+
     if (f.search){
       var q = f.search.toLowerCase();
       var vendor = nullSafeText(item.vendor_name).toLowerCase();
       var invNum = nullSafeText(item.invoice_number).toLowerCase();
       if (vendor.indexOf(q) === -1 && invNum.indexOf(q) === -1) return false;
     }
+
     return true;
   }
 
@@ -1185,8 +1244,10 @@
   function sortFiltered(){
     var col = state.sort.col;
     var dir = state.sort.dir === "asc" ? 1 : -1;
+
     state.filtered.sort(function(a, b){
       var av = a[col], bv = b[col];
+
       if (col === "total_amount"){
         av = parseAmount(av); bv = parseAmount(bv);
         return (av - bv) * dir;
@@ -1195,6 +1256,7 @@
         av = av === true ? 1 : 0; bv = bv === true ? 1 : 0;
         return (av - bv) * dir;
       }
+
       av = isNullish(av) ? "" : String(av).toLowerCase();
       bv = isNullish(bv) ? "" : String(bv).toLowerCase();
       if (av < bv) return -1 * dir;
@@ -1207,12 +1269,14 @@
   function renderKPIs(list){
     var total = list.length;
     var payableSum = 0, receivableSum = 0, reviewCount = 0;
+
     list.forEach(function(item){
       var amt = parseAmount(item.total_amount);
       if (item.direction === "payable") payableSum += amt;
       if (item.direction === "receivable") receivableSum += amt;
       if (item.needs_review === true) reviewCount++;
     });
+
     document.getElementById('kpi-total').textContent = total.toLocaleString('en-US');
     document.getElementById('kpi-payable').textContent = formatAmount(payableSum);
     document.getElementById('kpi-receivable').textContent = formatAmount(receivableSum);
@@ -1225,7 +1289,11 @@
     var pagination = document.getElementById('pagination');
 
     if (state.filtered.length === 0){
-      setTableMessage('<div class="table-empty">لا توجد فواتير مطابقة لهذا الفلتر.</div>');
+      if (state.invoices.length === 0 && !state.loadFailed){
+        // handled by refreshData / initial state already
+      } else {
+        setTableMessage('<div class="table-empty">لا توجد فواتير مطابقة لهذا الفلتر.</div>');
+      }
       return;
     }
 
@@ -1252,6 +1320,7 @@
         '<td>' + escapeHtml(nullSafeText(item.invoice_date)) + '</td>' +
         '<td><span class="badge ' + (reviewYes ? 'review-yes' : 'review-no') + '">' + (reviewYes ? 'نعم' : 'لا') + '</span></td>' +
         '<td class="reason-cell">' + renderReasonCell(item.review_reason, item.row_number) + '</td>' +
+        '<td class="reason-cell">' + renderUnicodeCell(item.unicode, item.row_number) + '</td>' +
         '<td><button class="icon-btn btn-edit-row" data-row="' + item.row_number + '">تعديل</button></td>' +
         '</tr>'
       );
@@ -1275,6 +1344,17 @@
       });
     });
 
+    document.querySelectorAll('.btn-view-unicode').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        var rowNumber = parseInt(btn.getAttribute('data-row'), 10);
+        var item = state.invoices.find(function(i){ return i.row_number === rowNumber; });
+        if (!item) return;
+        document.getElementById('unicode-modal-text').textContent = nullSafeText(item.unicode);
+        document.getElementById('unicode-modal-overlay').classList.add('active');
+      });
+    });
+
+    // pagination
     pagination.style.display = 'flex';
     var info = document.getElementById('pagination-info');
     var from = start + 1;
@@ -1290,8 +1370,10 @@
     html += '<button class="page-btn" id="pg-next" ' + (state.page === totalPages ? 'disabled' : '') + '>التالي</button>';
     btnsWrap.innerHTML = html;
 
-    document.getElementById('pg-prev').addEventListener('click', function(){ state.page--; renderTable(); });
-    document.getElementById('pg-next').addEventListener('click', function(){ state.page++; renderTable(); });
+    var prevBtn = document.getElementById('pg-prev');
+    var nextBtn = document.getElementById('pg-next');
+    if (prevBtn) prevBtn.addEventListener('click', function(){ state.page--; renderTable(); });
+    if (nextBtn) nextBtn.addEventListener('click', function(){ state.page++; renderTable(); });
     document.querySelectorAll('[data-page]').forEach(function(btn){
       btn.addEventListener('click', function(){
         state.page = parseInt(btn.getAttribute('data-page'), 10);
@@ -1319,9 +1401,9 @@
   });
 
   // ---------- filters wiring ----------
-  function bindFilter(id, key){
+  function bindFilter(id, key, transform){
     document.getElementById(id).addEventListener('change', function(e){
-      state.filters[key] = e.target.value;
+      state.filters[key] = transform ? transform(e.target.value) : e.target.value;
       state.page = 1;
       applyFiltersAndRender();
     });
@@ -1356,7 +1438,7 @@
     applyFiltersAndRender();
   });
 
-  // ---------- refresh ----------
+  // ---------- refresh button ----------
   document.getElementById('btn-refresh').addEventListener('click', refreshData);
 
   // ---------- auto refresh ----------
@@ -1379,6 +1461,7 @@
   function openEditModal(rowNumber){
     var item = state.invoices.find(function(i){ return i.row_number === rowNumber; });
     if (!item) return;
+
     document.getElementById('edit-vendor_name').value = nullSafeText(item.vendor_name);
     document.getElementById('edit-invoice_number').value = nullSafeText(item.invoice_number);
     document.getElementById('edit-invoice_date').value = nullSafeText(item.invoice_date);
@@ -1388,6 +1471,8 @@
     document.getElementById('edit-currency').value = nullSafeText(item.currency);
     document.getElementById('edit-direction').value = item.direction || 'payable';
     document.getElementById('edit-review_reason').value = nullSafeText(item.review_reason);
+    document.getElementById('edit-unicode').value = nullSafeText(item.unicode);
+
     document.getElementById('edit-modal-overlay').setAttribute('data-row', rowNumber);
     document.getElementById('edit-modal-overlay').classList.add('active');
   }
@@ -1416,7 +1501,8 @@
       direction: document.getElementById('edit-direction').value,
       document_type: document.getElementById('edit-document_type').value,
       needs_review: false,
-      review_reason: document.getElementById('edit-review_reason').value.trim()
+      review_reason: document.getElementById('edit-review_reason').value.trim(),
+      unicode: document.getElementById('edit-unicode').value.trim()
     };
 
     var saveBtn = document.getElementById('btn-edit-save');
@@ -1459,6 +1545,25 @@
     if (e.target === this) closeAddModal();
   });
 
+  // ---------- reason view modal ----------
+  function closeReasonModal(){
+    document.getElementById('reason-modal-overlay').classList.remove('active');
+  }
+
+  document.getElementById('btn-reason-close').addEventListener('click', closeReasonModal);
+  document.getElementById('reason-modal-overlay').addEventListener('click', function(e){
+    if (e.target === this) closeReasonModal();
+  });
+
+  function closeUnicodeModal(){
+    document.getElementById('unicode-modal-overlay').classList.remove('active');
+  }
+
+  document.getElementById('btn-unicode-close').addEventListener('click', closeUnicodeModal);
+  document.getElementById('unicode-modal-overlay').addEventListener('click', function(e){
+    if (e.target === this) closeUnicodeModal();
+  });
+
   document.getElementById('btn-add-save').addEventListener('click', function(){
     var url = getActiveWebhookUrl();
     if (!url){ alert('الرجاء إعداد رابط Webhook أولاً من صفحة الإعدادات.'); return; }
@@ -1495,14 +1600,6 @@
       saveBtn.textContent = 'حفظ الفاتورة';
       alert('تعذّر حفظ الفاتورة. حاول مرة أخرى.');
     });
-  });
-
-  // ---------- reason modal ----------
-  document.getElementById('btn-reason-close').addEventListener('click', function(){
-    document.getElementById('reason-modal-overlay').classList.remove('active');
-  });
-  document.getElementById('reason-modal-overlay').addEventListener('click', function(e){
-    if (e.target === this) document.getElementById('reason-modal-overlay').classList.remove('active');
   });
 
   // ---------- init ----------
