@@ -1,0 +1,1494 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>لوحة متابعة الفواتير</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0d0d0d;
+    --card:#1a1a1a;
+    --card-raised:#212121;
+    --border:#2a2a2a;
+    --text:#ececea;
+    --text-dim:#9c9c9a;
+    --text-faint:#6b6b69;
+    --accent:#ff6d5a;
+    --accent-dim:#4a2d27;
+    --payable:#378ADD;
+    --payable-bg:#182c3f;
+    --receivable:#1D9E75;
+    --receivable-bg:#123227;
+    --review:#E24B4A;
+    --review-bg:#3a1e1e;
+    --ok-bg:#123227;
+    --ok-text:#1D9E75;
+    --radius:10px;
+    --radius-sm:6px;
+  }
+
+  *{box-sizing:border-box;}
+
+  html,body{
+    margin:0;
+    padding:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:'Cairo', sans-serif;
+    font-size:15px;
+    line-height:1.6;
+  }
+
+  body{
+    text-align:right;
+    min-height:100vh;
+  }
+
+  button, input, select{
+    font-family:'Cairo', sans-serif;
+  }
+
+  a{color:var(--accent);}
+
+  /* ---------- LAYOUT ---------- */
+  .app{
+    display:flex;
+    min-height:100vh;
+  }
+
+  .sidebar{
+    width:230px;
+    flex-shrink:0;
+    background:var(--card);
+    border-left:1px solid var(--border);
+    padding:24px 18px;
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+  }
+
+  .sidebar .brand{
+    font-size:19px;
+    font-weight:800;
+    color:var(--text);
+    margin:0 6px 26px 6px;
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+
+  .sidebar .brand .dot{
+    width:10px;
+    height:10px;
+    border-radius:50%;
+    background:var(--accent);
+    flex-shrink:0;
+  }
+
+  .nav-item{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:11px 14px;
+    border-radius:var(--radius-sm);
+    color:var(--text-dim);
+    cursor:pointer;
+    font-weight:600;
+    font-size:14.5px;
+    transition:background .15s ease, color .15s ease;
+    border:1px solid transparent;
+  }
+
+  .nav-item:hover{
+    background:var(--card-raised);
+    color:var(--text);
+  }
+
+  .nav-item.active{
+    background:var(--accent-dim);
+    color:var(--accent);
+    border-color:rgba(255,109,90,.25);
+  }
+
+  .main{
+    flex:1;
+    min-width:0;
+    padding:28px 32px 60px 32px;
+  }
+
+  .view{display:none;}
+  .view.active{display:block;}
+
+  .page-title{
+    font-size:22px;
+    font-weight:800;
+    margin:0 0 4px 0;
+  }
+
+  .page-sub{
+    color:var(--text-dim);
+    font-size:14px;
+    margin:0 0 24px 0;
+  }
+
+  /* ---------- KPI CARDS ---------- */
+  .kpi-row{
+    display:grid;
+    grid-template-columns:repeat(4, 1fr);
+    gap:14px;
+    margin-bottom:22px;
+  }
+
+  .kpi-card{
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    padding:18px 20px;
+    position:relative;
+    overflow:hidden;
+  }
+
+  .kpi-card::before{
+    content:"";
+    position:absolute;
+    top:0; right:0; bottom:0;
+    width:3px;
+    background:var(--accent);
+  }
+
+  .kpi-card.is-review::before{background:var(--review);}
+  .kpi-card.is-payable::before{background:var(--payable);}
+  .kpi-card.is-receivable::before{background:var(--receivable);}
+
+  .kpi-label{
+    font-size:13px;
+    color:var(--text-dim);
+    font-weight:600;
+    margin-bottom:8px;
+  }
+
+  .kpi-value{
+    font-size:26px;
+    font-weight:800;
+    letter-spacing:-.3px;
+  }
+
+  .kpi-card.is-review .kpi-value{color:var(--review);}
+
+  .kpi-value .cur{
+    font-size:14px;
+    color:var(--text-dim);
+    font-weight:600;
+    margin-right:4px;
+  }
+
+  /* ---------- FILTER BAR ---------- */
+  .panel{
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    padding:16px 18px;
+    margin-bottom:14px;
+  }
+
+  .filter-row{
+    display:flex;
+    flex-wrap:wrap;
+    gap:12px;
+    align-items:flex-end;
+  }
+
+  .field{
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+    min-width:150px;
+  }
+
+  .field label{
+    font-size:12.5px;
+    color:var(--text-dim);
+    font-weight:600;
+  }
+
+  .field input, .field select{
+    background:var(--bg);
+    border:1px solid var(--border);
+    color:var(--text);
+    border-radius:var(--radius-sm);
+    padding:9px 10px;
+    font-size:14px;
+    outline:none;
+    min-height:38px;
+  }
+
+  .field input:focus, .field select:focus, .toolbar input:focus{
+    border-color:var(--accent);
+  }
+
+  .date-sep{
+    color:var(--text-faint);
+    padding-bottom:9px;
+    font-size:13px;
+  }
+
+  /* ---------- TOOLBAR ---------- */
+  .toolbar{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    flex-wrap:wrap;
+    gap:12px;
+    margin-bottom:14px;
+  }
+
+  .toolbar-left{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    flex-wrap:wrap;
+  }
+
+  .toolbar-right{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    flex-wrap:wrap;
+  }
+
+  .search-box{
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:var(--radius-sm);
+    padding:9px 12px;
+    color:var(--text);
+    min-width:220px;
+    font-size:14px;
+    outline:none;
+  }
+
+  .search-box:focus{border-color:var(--accent);}
+
+  .btn{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    background:var(--card-raised);
+    border:1px solid var(--border);
+    color:var(--text);
+    border-radius:var(--radius-sm);
+    padding:9px 16px;
+    font-size:14px;
+    font-weight:600;
+    cursor:pointer;
+    transition:border-color .15s ease, background .15s ease;
+    white-space:nowrap;
+  }
+
+  .btn:hover{border-color:var(--text-faint);}
+
+  .btn-primary{
+    background:var(--accent);
+    border-color:var(--accent);
+    color:#1a0d0a;
+  }
+
+  .btn-primary:hover{
+    background:#ff8271;
+    border-color:#ff8271;
+  }
+
+  .btn-ghost{
+    background:transparent;
+  }
+
+  .btn-sm{
+    padding:6px 12px;
+    font-size:13px;
+  }
+
+  .autorefresh{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:var(--radius-sm);
+    padding:7px 12px;
+    font-size:13.5px;
+    color:var(--text-dim);
+  }
+
+  .autorefresh input[type="number"]{
+    width:52px;
+    background:var(--bg);
+    border:1px solid var(--border);
+    color:var(--text);
+    border-radius:5px;
+    padding:4px 6px;
+    text-align:center;
+  }
+
+  .switch{
+    position:relative;
+    width:38px;
+    height:21px;
+    flex-shrink:0;
+  }
+
+  .switch input{opacity:0; width:0; height:0;}
+
+  .switch .track{
+    position:absolute; inset:0;
+    background:var(--border);
+    border-radius:20px;
+    cursor:pointer;
+    transition:background .15s ease;
+  }
+
+  .switch .track::before{
+    content:"";
+    position:absolute;
+    height:15px; width:15px;
+    right:3px; top:3px;
+    background:var(--text-dim);
+    border-radius:50%;
+    transition:transform .15s ease, background .15s ease;
+  }
+
+  .switch input:checked + .track{background:var(--accent-dim);}
+  .switch input:checked + .track::before{
+    transform:translateX(-17px);
+    background:var(--accent);
+  }
+
+  .last-updated{
+    font-size:13px;
+    color:var(--text-faint);
+  }
+
+  .env-badge{
+    font-size:12.5px;
+    font-weight:700;
+    padding:5px 11px;
+    border-radius:20px;
+  }
+
+  .env-badge.trial{
+    background:#3a3418;
+    color:#e6c94d;
+  }
+
+  .env-badge.prod{
+    background:var(--ok-bg);
+    color:var(--ok-text);
+  }
+
+  /* ---------- TABLE ---------- */
+  .table-wrap{
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    overflow:hidden;
+  }
+
+  table{
+    width:100%;
+    border-collapse:collapse;
+    font-size:14px;
+  }
+
+  thead th{
+    background:var(--card-raised);
+    color:var(--text-dim);
+    font-weight:700;
+    font-size:12.5px;
+    text-align:right;
+    padding:12px 14px;
+    border-bottom:1px solid var(--border);
+    cursor:pointer;
+    user-select:none;
+    white-space:nowrap;
+  }
+
+  thead th:hover{color:var(--text);}
+
+  thead th .arrow{
+    font-size:11px;
+    color:var(--accent);
+    margin-left:4px;
+  }
+
+  tbody td{
+    padding:12px 14px;
+    border-bottom:1px solid var(--border);
+    white-space:nowrap;
+    color:var(--text);
+  }
+
+  tbody tr:last-child td{border-bottom:none;}
+  tbody tr:hover{background:rgba(255,255,255,0.02);}
+
+  .badge{
+    display:inline-block;
+    padding:4px 11px;
+    border-radius:20px;
+    font-size:12.5px;
+    font-weight:700;
+  }
+
+  .badge.payable{background:var(--payable-bg); color:var(--payable);}
+  .badge.receivable{background:var(--receivable-bg); color:var(--receivable);}
+  .badge.review-yes{background:var(--review-bg); color:var(--review);}
+  .badge.review-no{background:var(--ok-bg); color:var(--ok-text);}
+
+  .cell-muted{color:var(--text-faint);}
+
+  .icon-btn{
+    background:transparent;
+    border:1px solid var(--border);
+    color:var(--text-dim);
+    border-radius:6px;
+    padding:6px 12px;
+    font-size:13px;
+    font-weight:600;
+    cursor:pointer;
+  }
+
+  .icon-btn:hover{
+    border-color:var(--accent);
+    color:var(--accent);
+  }
+
+  .table-empty, .table-error, .table-loading{
+    padding:60px 20px;
+    text-align:center;
+    color:var(--text-dim);
+  }
+
+  .table-error .icon-btn{display:inline-block; margin-top:10px;}
+
+  .spinner{
+    width:30px;
+    height:30px;
+    border-radius:50%;
+    border:3px solid var(--border);
+    border-top-color:var(--accent);
+    margin:0 auto 14px auto;
+    animation:spin .8s linear infinite;
+  }
+
+  @keyframes spin{to{transform:rotate(360deg);}}
+
+  .pagination{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:14px 18px;
+    border-top:1px solid var(--border);
+    font-size:13.5px;
+    color:var(--text-dim);
+  }
+
+  .page-btns{display:flex; gap:6px;}
+
+  .page-btn{
+    min-width:32px;
+    height:32px;
+    border-radius:6px;
+    border:1px solid var(--border);
+    background:transparent;
+    color:var(--text-dim);
+    cursor:pointer;
+    font-size:13px;
+  }
+
+  .page-btn.active{
+    background:var(--accent-dim);
+    color:var(--accent);
+    border-color:rgba(255,109,90,.3);
+  }
+
+  .page-btn:disabled{opacity:.4; cursor:default;}
+
+  /* ---------- MODAL ---------- */
+  .modal-overlay{
+    display:none;
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,.6);
+    z-index:100;
+    align-items:center;
+    justify-content:center;
+    padding:20px;
+  }
+
+  .modal-overlay.active{display:flex;}
+
+  .modal{
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    width:100%;
+    max-width:560px;
+    max-height:88vh;
+    overflow-y:auto;
+    padding:24px 26px;
+  }
+
+  .modal-title{
+    font-size:18px;
+    font-weight:800;
+    margin:0 0 18px 0;
+  }
+
+  .modal-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:14px;
+  }
+
+  .modal-grid .field.span-2{grid-column:1 / -1;}
+
+  .modal-actions{
+    display:flex;
+    justify-content:flex-end;
+    gap:10px;
+    margin-top:22px;
+  }
+
+  .checkbox-field{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    padding-top:8px;
+  }
+
+  .checkbox-field input{width:16px; height:16px;}
+
+  /* ---------- SETTINGS ---------- */
+  .settings-card{
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    padding:24px 26px;
+    max-width:560px;
+  }
+
+  .settings-field{
+    margin-bottom:20px;
+  }
+
+  .settings-field label{
+    display:block;
+    font-size:13.5px;
+    font-weight:600;
+    color:var(--text-dim);
+    margin-bottom:8px;
+  }
+
+  .settings-field input{
+    width:100%;
+    background:var(--bg);
+    border:1px solid var(--border);
+    color:var(--text);
+    border-radius:var(--radius-sm);
+    padding:10px 12px;
+    font-size:14px;
+    outline:none;
+  }
+
+  .settings-field input:focus{border-color:var(--accent);}
+
+  .env-toggle-row{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    margin-bottom:24px;
+    background:var(--bg);
+    border:1px solid var(--border);
+    border-radius:var(--radius-sm);
+    padding:12px 14px;
+  }
+
+  .env-toggle-row .label-text{
+    font-size:14px;
+    font-weight:600;
+    flex:1;
+  }
+
+  .save-msg{
+    font-size:13.5px;
+    color:var(--receivable);
+    margin-right:12px;
+    opacity:0;
+    transition:opacity .2s ease;
+  }
+
+  .save-msg.show{opacity:1;}
+
+  @media (max-width: 900px){
+    .kpi-row{grid-template-columns:repeat(2, 1fr);}
+    .sidebar{width:76px; padding:20px 10px;}
+    .sidebar .brand span:not(.dot){display:none;}
+    .nav-item span:not(.ic){display:none;}
+    .modal-grid{grid-template-columns:1fr;}
+  }
+
+  ::selection{background:var(--accent-dim); color:var(--accent);}
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <aside class="sidebar">
+    <div class="brand"><span class="dot"></span><span>متابعة الفواتير</span></div>
+    <div class="nav-item active" data-view="dashboard"><span class="ic">🏠</span><span>الرئيسية</span></div>
+    <div class="nav-item" data-view="settings"><span class="ic">⚙️</span><span>الإعدادات</span></div>
+  </aside>
+
+  <main class="main">
+
+    <!-- ================= DASHBOARD VIEW ================= -->
+    <section id="view-dashboard" class="view active">
+      <h1 class="page-title">الرئيسية</h1>
+      <p class="page-sub">نظرة عامة على كل الفواتير الواردة والصادرة</p>
+
+      <div class="kpi-row">
+        <div class="kpi-card">
+          <div class="kpi-label">إجمالي الفواتير</div>
+          <div class="kpi-value" id="kpi-total">0</div>
+        </div>
+        <div class="kpi-card is-payable">
+          <div class="kpi-label">مستحق علينا</div>
+          <div class="kpi-value" id="kpi-payable">0</div>
+        </div>
+        <div class="kpi-card is-receivable">
+          <div class="kpi-label">مستحق لنا</div>
+          <div class="kpi-value" id="kpi-receivable">0</div>
+        </div>
+        <div class="kpi-card is-review">
+          <div class="kpi-label">تحتاج مراجعة</div>
+          <div class="kpi-value" id="kpi-review">0</div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="filter-row">
+          <div class="field">
+            <label>الاتجاه</label>
+            <select id="f-direction">
+              <option value="all">الكل</option>
+              <option value="payable">مستحق علينا</option>
+              <option value="receivable">مستحق لنا</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>تحتاج مراجعة</label>
+            <select id="f-review">
+              <option value="all">الكل</option>
+              <option value="yes">نعم</option>
+              <option value="no">لا</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>نوع المستند</label>
+            <select id="f-doctype">
+              <option value="all">الكل</option>
+              <option value="invoice">فاتورة</option>
+              <option value="credit_note">إشعار دائن</option>
+              <option value="debit_note">إشعار مدين</option>
+              <option value="receipt">إيصال</option>
+              <option value="quotation">عرض سعر</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>من تاريخ الفاتورة</label>
+            <input type="date" id="f-date-from">
+          </div>
+          <div class="date-sep">—</div>
+          <div class="field">
+            <label>إلى تاريخ الفاتورة</label>
+            <input type="date" id="f-date-to">
+          </div>
+          <div class="field">
+            <label>&nbsp;</label>
+            <button class="icon-btn" id="btn-clear-filters">مسح الفلاتر</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="toolbar">
+        <div class="toolbar-left">
+          <input type="text" class="search-box" id="search-box" placeholder="بحث باسم المورد أو رقم الفاتورة...">
+          <button class="btn btn-primary" id="btn-refresh">تحديث فوري</button>
+          <div class="autorefresh">
+            <label class="switch">
+              <input type="checkbox" id="autorefresh-toggle">
+              <span class="track"></span>
+            </label>
+            <span>تحديث تلقائي كل</span>
+            <input type="number" id="autorefresh-interval" min="1" value="10">
+            <span>دقيقة</span>
+          </div>
+          <span class="last-updated" id="last-updated">آخر تحديث: —</span>
+        </div>
+        <div class="toolbar-right">
+          <span class="env-badge" id="env-badge">—</span>
+          <button class="btn" id="btn-add-invoice">+ إضافة فاتورة</button>
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th data-col="vendor_name">اسم المورد<span class="arrow" id="arrow-vendor_name"></span></th>
+              <th data-col="invoice_number">رقم الفاتورة<span class="arrow" id="arrow-invoice_number"></span></th>
+              <th data-col="document_type">نوع المستند<span class="arrow" id="arrow-document_type"></span></th>
+              <th data-col="direction">الاتجاه<span class="arrow" id="arrow-direction"></span></th>
+              <th data-col="total_amount">المبلغ الإجمالي<span class="arrow" id="arrow-total_amount"></span></th>
+              <th data-col="currency">العملة<span class="arrow" id="arrow-currency"></span></th>
+              <th data-col="invoice_date">تاريخ الفاتورة<span class="arrow" id="arrow-invoice_date"></span></th>
+              <th data-col="needs_review">تحتاج مراجعة<span class="arrow" id="arrow-needs_review"></span></th>
+              <th>سبب المراجعة</th>
+              <th>إجراءات</th>
+            </tr>
+          </thead>
+          <tbody id="table-body">
+            <tr><td colspan="10">
+              <div class="table-empty" id="initial-empty">
+                لم يتم إعداد رابط Webhook بعد. الرجاء الذهاب إلى صفحة الإعدادات لإدخال الرابط.
+              </div>
+            </td></tr>
+          </tbody>
+        </table>
+        <div class="pagination" id="pagination" style="display:none;">
+          <span id="pagination-info"></span>
+          <div class="page-btns" id="pagination-btns"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= SETTINGS VIEW ================= -->
+    <section id="view-settings" class="view">
+      <h1 class="page-title">الإعدادات</h1>
+      <p class="page-sub">إعداد روابط Webhook والبيئة النشطة</p>
+
+      <div class="settings-card">
+        <div class="settings-field">
+          <label>رابط Webhook التجريبي</label>
+          <input type="text" id="s-trial-url" placeholder="https://...">
+        </div>
+        <div class="settings-field">
+          <label>رابط Webhook الإنتاجي</label>
+          <input type="text" id="s-prod-url" placeholder="https://...">
+        </div>
+
+        <div class="env-toggle-row">
+          <span class="label-text">البيئة النشطة: <strong id="env-toggle-label">تجريبي</strong></span>
+          <label class="switch">
+            <input type="checkbox" id="s-env-toggle">
+            <span class="track"></span>
+          </label>
+        </div>
+
+        <div style="display:flex; align-items:center;">
+          <button class="btn btn-primary" id="btn-save-settings">حفظ الإعدادات</button>
+          <span class="save-msg" id="save-msg">تم الحفظ بنجاح</span>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<!-- ================= EDIT MODAL ================= -->
+<div class="modal-overlay" id="edit-modal-overlay">
+  <div class="modal">
+    <h2 class="modal-title">تعديل الفاتورة</h2>
+    <div class="modal-grid">
+      <div class="field">
+        <label>اسم المورد</label>
+        <input type="text" id="edit-vendor_name">
+      </div>
+      <div class="field">
+        <label>رقم الفاتورة</label>
+        <input type="text" id="edit-invoice_number">
+      </div>
+      <div class="field">
+        <label>تاريخ الفاتورة</label>
+        <input type="date" id="edit-invoice_date">
+      </div>
+      <div class="field">
+        <label>نوع المستند</label>
+        <select id="edit-document_type">
+          <option value="invoice">فاتورة</option>
+          <option value="credit_note">إشعار دائن</option>
+          <option value="debit_note">إشعار مدين</option>
+          <option value="receipt">إيصال</option>
+          <option value="quotation">عرض سعر</option>
+          <option value="other">أخرى</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>المبلغ الإجمالي</label>
+        <input type="number" step="0.01" id="edit-total_amount">
+      </div>
+      <div class="field">
+        <label>الضريبة</label>
+        <input type="number" step="0.01" id="edit-tax_amount">
+      </div>
+      <div class="field">
+        <label>العملة</label>
+        <input type="text" id="edit-currency" placeholder="EGP / USD / ...">
+      </div>
+      <div class="field">
+        <label>الاتجاه</label>
+        <select id="edit-direction">
+          <option value="payable">مستحق علينا</option>
+          <option value="receivable">مستحق لنا</option>
+        </select>
+      </div>
+      <div class="field span-2">
+        <label>سبب المراجعة</label>
+        <input type="text" id="edit-review_reason">
+      </div>
+      <div class="field span-2 checkbox-field">
+        <input type="checkbox" id="edit-needs_review">
+        <label style="margin:0;">تحتاج مراجعة</label>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" id="btn-edit-cancel">إلغاء</button>
+      <button class="btn btn-primary" id="btn-edit-save">حفظ التعديلات</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= ADD MODAL ================= -->
+<div class="modal-overlay" id="add-modal-overlay">
+  <div class="modal">
+    <h2 class="modal-title">إضافة فاتورة جديدة</h2>
+    <div class="modal-grid">
+      <div class="field">
+        <label>اسم المورد</label>
+        <input type="text" id="add-vendor_name">
+      </div>
+      <div class="field">
+        <label>رقم الفاتورة</label>
+        <input type="text" id="add-invoice_number">
+      </div>
+      <div class="field">
+        <label>تاريخ الفاتورة</label>
+        <input type="date" id="add-invoice_date">
+      </div>
+      <div class="field">
+        <label>نوع المستند</label>
+        <select id="add-document_type">
+          <option value="invoice">فاتورة</option>
+          <option value="credit_note">إشعار دائن</option>
+          <option value="debit_note">إشعار مدين</option>
+          <option value="receipt">إيصال</option>
+          <option value="quotation">عرض سعر</option>
+          <option value="other">أخرى</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>المبلغ الإجمالي</label>
+        <input type="number" step="0.01" id="add-total_amount">
+      </div>
+      <div class="field">
+        <label>الضريبة</label>
+        <input type="number" step="0.01" id="add-tax_amount">
+      </div>
+      <div class="field">
+        <label>العملة</label>
+        <input type="text" id="add-currency" placeholder="EGP / USD / ...">
+      </div>
+      <div class="field">
+        <label>الاتجاه</label>
+        <select id="add-direction">
+          <option value="payable">مستحق علينا</option>
+          <option value="receivable">مستحق لنا</option>
+        </select>
+      </div>
+      <div class="field span-2">
+        <label>سبب المراجعة</label>
+        <input type="text" id="add-review_reason">
+      </div>
+      <div class="field span-2 checkbox-field">
+        <input type="checkbox" id="add-needs_review">
+        <label style="margin:0;">تحتاج مراجعة</label>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" id="btn-add-cancel">إلغاء</button>
+      <button class="btn btn-primary" id="btn-add-save">حفظ الفاتورة</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  var STORAGE_KEY = "invoiceDashboardSettings";
+
+  var DOC_TYPE_LABELS = {
+    invoice: "فاتورة",
+    credit_note: "إشعار دائن",
+    debit_note: "إشعار مدين",
+    receipt: "إيصال",
+    quotation: "عرض سعر",
+    other: "أخرى"
+  };
+
+  var state = {
+    invoices: [],
+    filtered: [],
+    filters: { direction:"all", review:"all", docType:"all", dateFrom:"", dateTo:"", search:"" },
+    sort: { col:"invoice_date", dir:"desc" },
+    page: 1,
+    pageSize: 20,
+    autoRefreshTimer: null,
+    loadFailed: false,
+    isLoading: false
+  };
+
+  // ---------- helpers ----------
+  function isNullish(v){
+    return v === "null" || v === null || v === undefined || v === "";
+  }
+
+  function nullSafeText(v){
+    return isNullish(v) ? "" : String(v);
+  }
+
+  function parseAmount(v){
+    if (isNullish(v)) return 0;
+    var n = parseFloat(v);
+    return isNaN(n) ? 0 : n;
+  }
+
+  function formatAmount(n){
+    return n.toLocaleString('en-US', { minimumFractionDigits:2, maximumFractionDigits:2 });
+  }
+
+  function dedupeByRow(list){
+    var map = new Map();
+    list.forEach(function(item){ map.set(item.row_number, item); });
+    return Array.from(map.values());
+  }
+
+  function escapeHtml(str){
+    var div = document.createElement('div');
+    div.textContent = str == null ? "" : String(str);
+    return div.innerHTML;
+  }
+
+  // ---------- settings ----------
+  function getSettings(){
+    try{
+      var raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return { trialUrl:"", prodUrl:"", activeEnv:"trial" };
+      var parsed = JSON.parse(raw);
+      return {
+        trialUrl: parsed.trialUrl || "",
+        prodUrl: parsed.prodUrl || "",
+        activeEnv: parsed.activeEnv === "prod" ? "prod" : "trial"
+      };
+    }catch(e){
+      return { trialUrl:"", prodUrl:"", activeEnv:"trial" };
+    }
+  }
+
+  function saveSettingsToStorage(settings){
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
+  }
+
+  function getActiveWebhookUrl(){
+    var s = getSettings();
+    return s.activeEnv === "prod" ? s.prodUrl : s.trialUrl;
+  }
+
+  function renderEnvBadge(){
+    var s = getSettings();
+    var badge = document.getElementById('env-badge');
+    if (s.activeEnv === "prod"){
+      badge.textContent = "إنتاجي";
+      badge.className = "env-badge prod";
+    } else {
+      badge.textContent = "تجريبي";
+      badge.className = "env-badge trial";
+    }
+  }
+
+  function loadSettingsIntoForm(){
+    var s = getSettings();
+    document.getElementById('s-trial-url').value = s.trialUrl;
+    document.getElementById('s-prod-url').value = s.prodUrl;
+    document.getElementById('s-env-toggle').checked = (s.activeEnv === "prod");
+    document.getElementById('env-toggle-label').textContent = (s.activeEnv === "prod") ? "إنتاجي" : "تجريبي";
+  }
+
+  document.getElementById('s-env-toggle').addEventListener('change', function(e){
+    document.getElementById('env-toggle-label').textContent = e.target.checked ? "إنتاجي" : "تجريبي";
+  });
+
+  document.getElementById('btn-save-settings').addEventListener('click', function(){
+    var settings = {
+      trialUrl: document.getElementById('s-trial-url').value.trim(),
+      prodUrl: document.getElementById('s-prod-url').value.trim(),
+      activeEnv: document.getElementById('s-env-toggle').checked ? "prod" : "trial"
+    };
+    saveSettingsToStorage(settings);
+    renderEnvBadge();
+    var msg = document.getElementById('save-msg');
+    msg.classList.add('show');
+    setTimeout(function(){ msg.classList.remove('show'); }, 2200);
+    // if a webhook url now exists and dashboard is empty, try loading
+    if (getActiveWebhookUrl() && state.invoices.length === 0 && !state.isLoading){
+      refreshData();
+    }
+  });
+
+  // ---------- navigation ----------
+  var navItems = document.querySelectorAll('.nav-item');
+  navItems.forEach(function(item){
+    item.addEventListener('click', function(){
+      navItems.forEach(function(n){ n.classList.remove('active'); });
+      item.classList.add('active');
+      var view = item.getAttribute('data-view');
+      document.querySelectorAll('.view').forEach(function(v){ v.classList.remove('active'); });
+      document.getElementById('view-' + view).classList.add('active');
+    });
+  });
+
+  // ---------- data fetch ----------
+  function setTableMessage(html){
+    document.getElementById('table-body').innerHTML = '<tr><td colspan="10">' + html + '</td></tr>';
+    document.getElementById('pagination').style.display = 'none';
+  }
+
+  function refreshData(){
+    var url = getActiveWebhookUrl();
+    if (!url){
+      setTableMessage('<div class="table-empty">لم يتم إعداد رابط Webhook بعد. الرجاء الذهاب إلى صفحة الإعدادات لإدخال الرابط.</div>');
+      return;
+    }
+
+    state.isLoading = true;
+    state.loadFailed = false;
+    setTableMessage('<div class="table-loading"><div class="spinner"></div>جارٍ تحميل البيانات...</div>');
+
+    fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action:'refresh', timestamp: new Date().toISOString() })
+    }).then(function(res){
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      return res.json();
+    }).then(function(data){
+      var list = Array.isArray(data) ? data : (Array.isArray(data.invoices) ? data.invoices : []);
+      state.invoices = dedupeByRow(list);
+      state.isLoading = false;
+      state.page = 1;
+      var now = new Date();
+      document.getElementById('last-updated').textContent = 'آخر تحديث: ' + now.toLocaleString('en-US');
+      applyFiltersAndRender();
+    }).catch(function(err){
+      state.isLoading = false;
+      state.loadFailed = true;
+      setTableMessage(
+        '<div class="table-error">' +
+        'تعذّر تحميل البيانات. تحقق من رابط الـ Webhook أو الاتصال بالإنترنت.' +
+        '<br><button class="icon-btn" id="btn-retry">إعادة المحاولة</button>' +
+        '</div>'
+      );
+      var retryBtn = document.getElementById('btn-retry');
+      if (retryBtn) retryBtn.addEventListener('click', refreshData);
+      renderKPIs([]);
+    });
+  }
+
+  // ---------- filtering ----------
+  function matchesFilters(item){
+    var f = state.filters;
+
+    if (f.direction !== "all" && item.direction !== f.direction) return false;
+
+    if (f.review !== "all"){
+      var needsReview = item.needs_review === true;
+      if (f.review === "yes" && !needsReview) return false;
+      if (f.review === "no" && needsReview) return false;
+    }
+
+    if (f.docType !== "all" && item.document_type !== f.docType) return false;
+
+    if (f.dateFrom){
+      if (isNullish(item.invoice_date) || item.invoice_date < f.dateFrom) return false;
+    }
+    if (f.dateTo){
+      if (isNullish(item.invoice_date) || item.invoice_date > f.dateTo) return false;
+    }
+
+    if (f.search){
+      var q = f.search.toLowerCase();
+      var vendor = nullSafeText(item.vendor_name).toLowerCase();
+      var invNum = nullSafeText(item.invoice_number).toLowerCase();
+      if (vendor.indexOf(q) === -1 && invNum.indexOf(q) === -1) return false;
+    }
+
+    return true;
+  }
+
+  function applyFiltersAndRender(){
+    state.filtered = state.invoices.filter(matchesFilters);
+    sortFiltered();
+    renderKPIs(state.filtered);
+    renderTable();
+  }
+
+  function sortFiltered(){
+    var col = state.sort.col;
+    var dir = state.sort.dir === "asc" ? 1 : -1;
+
+    state.filtered.sort(function(a, b){
+      var av = a[col], bv = b[col];
+
+      if (col === "total_amount"){
+        av = parseAmount(av); bv = parseAmount(bv);
+        return (av - bv) * dir;
+      }
+      if (col === "needs_review"){
+        av = av === true ? 1 : 0; bv = bv === true ? 1 : 0;
+        return (av - bv) * dir;
+      }
+
+      av = isNullish(av) ? "" : String(av).toLowerCase();
+      bv = isNullish(bv) ? "" : String(bv).toLowerCase();
+      if (av < bv) return -1 * dir;
+      if (av > bv) return 1 * dir;
+      return 0;
+    });
+  }
+
+  // ---------- KPIs ----------
+  function renderKPIs(list){
+    var total = list.length;
+    var payableSum = 0, receivableSum = 0, reviewCount = 0;
+
+    list.forEach(function(item){
+      var amt = parseAmount(item.total_amount);
+      if (item.direction === "payable") payableSum += amt;
+      if (item.direction === "receivable") receivableSum += amt;
+      if (item.needs_review === true) reviewCount++;
+    });
+
+    document.getElementById('kpi-total').textContent = total.toLocaleString('en-US');
+    document.getElementById('kpi-payable').textContent = formatAmount(payableSum);
+    document.getElementById('kpi-receivable').textContent = formatAmount(receivableSum);
+    document.getElementById('kpi-review').textContent = reviewCount.toLocaleString('en-US');
+  }
+
+  // ---------- table rendering ----------
+  function renderTable(){
+    var body = document.getElementById('table-body');
+    var pagination = document.getElementById('pagination');
+
+    if (state.filtered.length === 0){
+      if (state.invoices.length === 0 && !state.loadFailed){
+        // handled by refreshData / initial state already
+      } else {
+        setTableMessage('<div class="table-empty">لا توجد فواتير مطابقة لهذا الفلتر.</div>');
+      }
+      return;
+    }
+
+    var totalPages = Math.max(1, Math.ceil(state.filtered.length / state.pageSize));
+    if (state.page > totalPages) state.page = totalPages;
+    var start = (state.page - 1) * state.pageSize;
+    var pageItems = state.filtered.slice(start, start + state.pageSize);
+
+    var rows = pageItems.map(function(item){
+      var dirLabel = item.direction === "payable" ? "مستحق علينا" : (item.direction === "receivable" ? "مستحق لنا" : "");
+      var dirClass = item.direction === "payable" ? "payable" : "receivable";
+      var docLabel = DOC_TYPE_LABELS[item.document_type] || nullSafeText(item.document_type);
+      var reviewYes = item.needs_review === true;
+      var amount = parseAmount(item.total_amount);
+
+      return (
+        '<tr>' +
+        '<td>' + escapeHtml(nullSafeText(item.vendor_name)) + '</td>' +
+        '<td>' + escapeHtml(nullSafeText(item.invoice_number)) + '</td>' +
+        '<td>' + escapeHtml(docLabel) + '</td>' +
+        '<td><span class="badge ' + dirClass + '">' + dirLabel + '</span></td>' +
+        '<td>' + (isNullish(item.total_amount) ? '<span class="cell-muted">—</span>' : formatAmount(amount)) + '</td>' +
+        '<td>' + escapeHtml(nullSafeText(item.currency)) + '</td>' +
+        '<td>' + escapeHtml(nullSafeText(item.invoice_date)) + '</td>' +
+        '<td><span class="badge ' + (reviewYes ? 'review-yes' : 'review-no') + '">' + (reviewYes ? 'نعم' : 'لا') + '</span></td>' +
+        '<td>' + escapeHtml(nullSafeText(item.review_reason)) + '</td>' +
+        '<td><button class="icon-btn btn-edit-row" data-row="' + item.row_number + '">تعديل</button></td>' +
+        '</tr>'
+      );
+    }).join('');
+
+    body.innerHTML = rows;
+
+    document.querySelectorAll('.btn-edit-row').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        openEditModal(parseInt(btn.getAttribute('data-row'), 10));
+      });
+    });
+
+    // pagination
+    pagination.style.display = 'flex';
+    var info = document.getElementById('pagination-info');
+    var from = start + 1;
+    var to = Math.min(start + state.pageSize, state.filtered.length);
+    info.textContent = 'عرض ' + from + '–' + to + ' من ' + state.filtered.length;
+
+    var btnsWrap = document.getElementById('pagination-btns');
+    var html = '';
+    html += '<button class="page-btn" id="pg-prev" ' + (state.page === 1 ? 'disabled' : '') + '>السابق</button>';
+    for (var p = 1; p <= totalPages; p++){
+      html += '<button class="page-btn ' + (p === state.page ? 'active' : '') + '" data-page="' + p + '">' + p + '</button>';
+    }
+    html += '<button class="page-btn" id="pg-next" ' + (state.page === totalPages ? 'disabled' : '') + '>التالي</button>';
+    btnsWrap.innerHTML = html;
+
+    var prevBtn = document.getElementById('pg-prev');
+    var nextBtn = document.getElementById('pg-next');
+    if (prevBtn) prevBtn.addEventListener('click', function(){ state.page--; renderTable(); });
+    if (nextBtn) nextBtn.addEventListener('click', function(){ state.page++; renderTable(); });
+    document.querySelectorAll('[data-page]').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        state.page = parseInt(btn.getAttribute('data-page'), 10);
+        renderTable();
+      });
+    });
+  }
+
+  // ---------- sorting via headers ----------
+  document.querySelectorAll('thead th[data-col]').forEach(function(th){
+    th.addEventListener('click', function(){
+      var col = th.getAttribute('data-col');
+      if (state.sort.col === col){
+        state.sort.dir = state.sort.dir === 'asc' ? 'desc' : 'asc';
+      } else {
+        state.sort.col = col;
+        state.sort.dir = 'asc';
+      }
+      document.querySelectorAll('.arrow').forEach(function(a){ a.textContent = ''; });
+      document.getElementById('arrow-' + col).textContent = state.sort.dir === 'asc' ? '▲' : '▼';
+      sortFiltered();
+      state.page = 1;
+      renderTable();
+    });
+  });
+
+  // ---------- filters wiring ----------
+  function bindFilter(id, key, transform){
+    document.getElementById(id).addEventListener('change', function(e){
+      state.filters[key] = transform ? transform(e.target.value) : e.target.value;
+      state.page = 1;
+      applyFiltersAndRender();
+    });
+  }
+
+  bindFilter('f-direction', 'direction');
+  bindFilter('f-review', 'review');
+  bindFilter('f-doctype', 'docType');
+  bindFilter('f-date-from', 'dateFrom');
+  bindFilter('f-date-to', 'dateTo');
+
+  var searchTimer = null;
+  document.getElementById('search-box').addEventListener('input', function(e){
+    clearTimeout(searchTimer);
+    var val = e.target.value;
+    searchTimer = setTimeout(function(){
+      state.filters.search = val.trim();
+      state.page = 1;
+      applyFiltersAndRender();
+    }, 250);
+  });
+
+  document.getElementById('btn-clear-filters').addEventListener('click', function(){
+    state.filters = { direction:"all", review:"all", docType:"all", dateFrom:"", dateTo:"", search:"" };
+    document.getElementById('f-direction').value = 'all';
+    document.getElementById('f-review').value = 'all';
+    document.getElementById('f-doctype').value = 'all';
+    document.getElementById('f-date-from').value = '';
+    document.getElementById('f-date-to').value = '';
+    document.getElementById('search-box').value = '';
+    state.page = 1;
+    applyFiltersAndRender();
+  });
+
+  // ---------- refresh button ----------
+  document.getElementById('btn-refresh').addEventListener('click', refreshData);
+
+  // ---------- auto refresh ----------
+  function setupAutoRefresh(){
+    if (state.autoRefreshTimer){
+      clearInterval(state.autoRefreshTimer);
+      state.autoRefreshTimer = null;
+    }
+    var enabled = document.getElementById('autorefresh-toggle').checked;
+    if (!enabled) return;
+    var minutes = parseFloat(document.getElementById('autorefresh-interval').value) || 10;
+    if (minutes < 1) minutes = 1;
+    state.autoRefreshTimer = setInterval(refreshData, minutes * 60 * 1000);
+  }
+
+  document.getElementById('autorefresh-toggle').addEventListener('change', setupAutoRefresh);
+  document.getElementById('autorefresh-interval').addEventListener('change', setupAutoRefresh);
+
+  // ---------- edit modal ----------
+  function openEditModal(rowNumber){
+    var item = state.invoices.find(function(i){ return i.row_number === rowNumber; });
+    if (!item) return;
+
+    document.getElementById('edit-vendor_name').value = nullSafeText(item.vendor_name);
+    document.getElementById('edit-invoice_number').value = nullSafeText(item.invoice_number);
+    document.getElementById('edit-invoice_date').value = nullSafeText(item.invoice_date);
+    document.getElementById('edit-document_type').value = item.document_type || 'invoice';
+    document.getElementById('edit-total_amount').value = isNullish(item.total_amount) ? '' : parseAmount(item.total_amount);
+    document.getElementById('edit-tax_amount').value = isNullish(item.tax_amount) ? '' : parseAmount(item.tax_amount);
+    document.getElementById('edit-currency').value = nullSafeText(item.currency);
+    document.getElementById('edit-direction').value = item.direction || 'payable';
+    document.getElementById('edit-review_reason').value = nullSafeText(item.review_reason);
+    document.getElementById('edit-needs_review').checked = item.needs_review === true;
+
+    document.getElementById('edit-modal-overlay').setAttribute('data-row', rowNumber);
+    document.getElementById('edit-modal-overlay').classList.add('active');
+  }
+
+  function closeEditModal(){
+    document.getElementById('edit-modal-overlay').classList.remove('active');
+  }
+
+  document.getElementById('btn-edit-cancel').addEventListener('click', closeEditModal);
+  document.getElementById('edit-modal-overlay').addEventListener('click', function(e){
+    if (e.target === this) closeEditModal();
+  });
+
+  document.getElementById('btn-edit-save').addEventListener('click', function(){
+    var rowNumber = parseInt(document.getElementById('edit-modal-overlay').getAttribute('data-row'), 10);
+    var url = getActiveWebhookUrl();
+    if (!url){ alert('الرجاء إعداد رابط Webhook أولاً من صفحة الإعدادات.'); return; }
+
+    var fields = {
+      vendor_name: document.getElementById('edit-vendor_name').value.trim(),
+      invoice_number: document.getElementById('edit-invoice_number').value.trim(),
+      invoice_date: document.getElementById('edit-invoice_date').value,
+      total_amount: parseFloat(document.getElementById('edit-total_amount').value) || 0,
+      tax_amount: parseFloat(document.getElementById('edit-tax_amount').value) || 0,
+      currency: document.getElementById('edit-currency').value.trim(),
+      direction: document.getElementById('edit-direction').value,
+      document_type: document.getElementById('edit-document_type').value,
+      needs_review: document.getElementById('edit-needs_review').checked,
+      review_reason: document.getElementById('edit-review_reason').value.trim()
+    };
+
+    var saveBtn = document.getElementById('btn-edit-save');
+    saveBtn.disabled = true;
+    saveBtn.textContent = 'جارٍ الحفظ...';
+
+    fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action:'update_invoice', row_number: rowNumber, fields: fields })
+    }).then(function(res){ return res.json(); })
+    .then(function(){
+      saveBtn.disabled = false;
+      saveBtn.textContent = 'حفظ التعديلات';
+      closeEditModal();
+      refreshData();
+    }).catch(function(){
+      saveBtn.disabled = false;
+      saveBtn.textContent = 'حفظ التعديلات';
+      alert('تعذّر حفظ التعديلات. حاول مرة أخرى.');
+    });
+  });
+
+  // ---------- add modal ----------
+  document.getElementById('btn-add-invoice').addEventListener('click', function(){
+    ['vendor_name','invoice_number','invoice_date','total_amount','tax_amount','currency','review_reason'].forEach(function(f){
+      document.getElementById('add-' + f).value = '';
+    });
+    document.getElementById('add-document_type').value = 'invoice';
+    document.getElementById('add-direction').value = 'payable';
+    document.getElementById('add-needs_review').checked = false;
+    document.getElementById('add-modal-overlay').classList.add('active');
+  });
+
+  function closeAddModal(){
+    document.getElementById('add-modal-overlay').classList.remove('active');
+  }
+
+  document.getElementById('btn-add-cancel').addEventListener('click', closeAddModal);
+  document.getElementById('add-modal-overlay').addEventListener('click', function(e){
+    if (e.target === this) closeAddModal();
+  });
+
+  document.getElementById('btn-add-save').addEventListener('click', function(){
+    var url = getActiveWebhookUrl();
+    if (!url){ alert('الرجاء إعداد رابط Webhook أولاً من صفحة الإعدادات.'); return; }
+
+    var fields = {
+      vendor_name: document.getElementById('add-vendor_name').value.trim(),
+      invoice_number: document.getElementById('add-invoice_number').value.trim(),
+      invoice_date: document.getElementById('add-invoice_date').value,
+      total_amount: parseFloat(document.getElementById('add-total_amount').value) || 0,
+      tax_amount: parseFloat(document.getElementById('add-tax_amount').value) || 0,
+      currency: document.getElementById('add-currency').value.trim(),
+      direction: document.getElementById('add-direction').value,
+      document_type: document.getElementById('add-document_type').value,
+      needs_review: document.getElementById('add-needs_review').checked,
+      review_reason: document.getElementById('add-review_reason').value.trim()
+    };
+
+    var saveBtn = document.getElementById('btn-add-save');
+    saveBtn.disabled = true;
+    saveBtn.textContent = 'جارٍ الحفظ...';
+
+    fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action:'submit_invoice', fields: fields })
+    }).then(function(res){ return res.json(); })
+    .then(function(){
+      saveBtn.disabled = false;
+      saveBtn.textContent = 'حفظ الفاتورة';
+      closeAddModal();
+      refreshData();
+    }).catch(function(){
+      saveBtn.disabled = false;
+      saveBtn.textContent = 'حفظ الفاتورة';
+      alert('تعذّر حفظ الفاتورة. حاول مرة أخرى.');
+    });
+  });
+
+  // ---------- init ----------
+  function init(){
+    loadSettingsIntoForm();
+    renderEnvBadge();
+    document.getElementById('arrow-invoice_date').textContent = '▼';
+    if (getActiveWebhookUrl()){
+      refreshData();
+    }
+  }
+
+  init();
+
+})();
+</script>
+
+</body>
+</html>
