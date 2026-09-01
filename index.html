@@ -47,7 +47,7 @@
     min-height:100vh;
   }
 
-  button, input, select{
+  button, input, select, textarea{
     font-family:'Cairo', sans-serif;
   }
 
@@ -214,7 +214,7 @@
     font-weight:600;
   }
 
-  .field input, .field select{
+  .field input, .field select, .field textarea{
     background:var(--bg);
     border:1px solid var(--border);
     color:var(--text);
@@ -225,7 +225,13 @@
     min-height:38px;
   }
 
-  .field input:focus, .field select:focus, .toolbar input:focus{
+  .field textarea{
+    resize:vertical;
+    line-height:1.55;
+    font-family:inherit;
+  }
+
+  .field input:focus, .field select:focus, .field textarea:focus, .toolbar input:focus{
     border-color:var(--accent);
   }
 
@@ -468,6 +474,28 @@
   .badge.review-no{background:var(--ok-bg); color:var(--ok-text);}
 
   .cell-muted{color:var(--text-faint);}
+
+  td.reason-cell{
+    white-space:normal;
+    max-width:200px;
+    width:200px;
+    vertical-align:top;
+  }
+
+  .reason-text{
+    display:-webkit-box;
+    -webkit-line-clamp:2;
+    -webkit-box-orient:vertical;
+    overflow:hidden;
+    word-break:break-word;
+    line-height:1.5;
+    margin-bottom:4px;
+  }
+
+  .btn-view-reason{
+    font-size:12px;
+    padding:3px 10px;
+  }
 
   .icon-btn{
     background:transparent;
@@ -880,11 +908,7 @@
       </div>
       <div class="field span-2">
         <label>سبب المراجعة</label>
-        <input type="text" id="edit-review_reason">
-      </div>
-      <div class="field span-2 checkbox-field">
-        <input type="checkbox" id="edit-needs_review">
-        <label style="margin:0;">تحتاج مراجعة</label>
+        <textarea id="edit-review_reason" rows="3"></textarea>
       </div>
     </div>
     <div class="modal-actions">
@@ -953,6 +977,17 @@
   </div>
 </div>
 
+<!-- ================= REASON VIEW MODAL ================= -->
+<div class="modal-overlay" id="reason-modal-overlay">
+  <div class="modal" style="max-width:440px;">
+    <h2 class="modal-title">سبب المراجعة</h2>
+    <p id="reason-modal-text" style="margin:0; line-height:1.7; word-break:break-word;"></p>
+    <div class="modal-actions">
+      <button class="btn" id="btn-reason-close">إغلاق</button>
+    </div>
+  </div>
+</div>
+
 <script>
 (function(){
   "use strict";
@@ -1009,6 +1044,16 @@
     var div = document.createElement('div');
     div.textContent = str == null ? "" : String(str);
     return div.innerHTML;
+  }
+
+  function renderReasonCell(reason, rowNumber){
+    var text = nullSafeText(reason);
+    if (!text) return '<span class="cell-muted">—</span>';
+    var html = '<div class="reason-text">' + escapeHtml(text) + '</div>';
+    if (text.length > 40){
+      html += '<button class="icon-btn btn-view-reason" data-row="' + rowNumber + '">عرض الكل</button>';
+    }
+    return html;
   }
 
   // ---------- settings ----------
@@ -1252,7 +1297,7 @@
         '<td>' + escapeHtml(nullSafeText(item.currency)) + '</td>' +
         '<td>' + escapeHtml(nullSafeText(item.invoice_date)) + '</td>' +
         '<td><span class="badge ' + (reviewYes ? 'review-yes' : 'review-no') + '">' + (reviewYes ? 'نعم' : 'لا') + '</span></td>' +
-        '<td>' + escapeHtml(nullSafeText(item.review_reason)) + '</td>' +
+        '<td class="reason-cell">' + renderReasonCell(item.review_reason, item.row_number) + '</td>' +
         '<td><button class="icon-btn btn-edit-row" data-row="' + item.row_number + '">تعديل</button></td>' +
         '</tr>'
       );
@@ -1263,6 +1308,16 @@
     document.querySelectorAll('.btn-edit-row').forEach(function(btn){
       btn.addEventListener('click', function(){
         openEditModal(parseInt(btn.getAttribute('data-row'), 10));
+      });
+    });
+
+    document.querySelectorAll('.btn-view-reason').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        var rowNumber = parseInt(btn.getAttribute('data-row'), 10);
+        var item = state.invoices.find(function(i){ return i.row_number === rowNumber; });
+        if (!item) return;
+        document.getElementById('reason-modal-text').textContent = nullSafeText(item.review_reason);
+        document.getElementById('reason-modal-overlay').classList.add('active');
       });
     });
 
@@ -1383,7 +1438,6 @@
     document.getElementById('edit-currency').value = nullSafeText(item.currency);
     document.getElementById('edit-direction').value = item.direction || 'payable';
     document.getElementById('edit-review_reason').value = nullSafeText(item.review_reason);
-    document.getElementById('edit-needs_review').checked = item.needs_review === true;
 
     document.getElementById('edit-modal-overlay').setAttribute('data-row', rowNumber);
     document.getElementById('edit-modal-overlay').classList.add('active');
@@ -1412,7 +1466,7 @@
       currency: document.getElementById('edit-currency').value.trim(),
       direction: document.getElementById('edit-direction').value,
       document_type: document.getElementById('edit-document_type').value,
-      needs_review: document.getElementById('edit-needs_review').checked,
+      needs_review: false,
       review_reason: document.getElementById('edit-review_reason').value.trim()
     };
 
@@ -1455,6 +1509,16 @@
   document.getElementById('btn-add-cancel').addEventListener('click', closeAddModal);
   document.getElementById('add-modal-overlay').addEventListener('click', function(e){
     if (e.target === this) closeAddModal();
+  });
+
+  // ---------- reason view modal ----------
+  function closeReasonModal(){
+    document.getElementById('reason-modal-overlay').classList.remove('active');
+  }
+
+  document.getElementById('btn-reason-close').addEventListener('click', closeReasonModal);
+  document.getElementById('reason-modal-overlay').addEventListener('click', function(e){
+    if (e.target === this) closeReasonModal();
   });
 
   document.getElementById('btn-add-save').addEventListener('click', function(){
