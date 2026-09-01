@@ -405,22 +405,10 @@
     overflow-x:auto;
   }
 
-  .table-scroll::-webkit-scrollbar{
-    height:10px;
-  }
-
-  .table-scroll::-webkit-scrollbar-track{
-    background:var(--card);
-  }
-
-  .table-scroll::-webkit-scrollbar-thumb{
-    background:var(--border);
-    border-radius:20px;
-  }
-
-  .table-scroll::-webkit-scrollbar-thumb:hover{
-    background:var(--text-faint);
-  }
+  .table-scroll::-webkit-scrollbar{height:10px;}
+  .table-scroll::-webkit-scrollbar-track{background:var(--card);}
+  .table-scroll::-webkit-scrollbar-thumb{background:var(--border);border-radius:20px;}
+  .table-scroll::-webkit-scrollbar-thumb:hover{background:var(--text-faint);}
 
   table{
     width:100%;
@@ -492,10 +480,7 @@
     margin-bottom:4px;
   }
 
-  .btn-view-reason{
-    font-size:12px;
-    padding:3px 10px;
-  }
+  .btn-view-reason{font-size:12px; padding:3px 10px;}
 
   .icon-btn{
     background:transparent;
@@ -610,15 +595,6 @@
     margin-top:22px;
   }
 
-  .checkbox-field{
-    display:flex;
-    align-items:center;
-    gap:8px;
-    padding-top:8px;
-  }
-
-  .checkbox-field input{width:16px; height:16px;}
-
   /* ---------- SETTINGS ---------- */
   .settings-card{
     background:var(--card);
@@ -628,9 +604,7 @@
     max-width:560px;
   }
 
-  .settings-field{
-    margin-bottom:20px;
-  }
+  .settings-field{margin-bottom:20px;}
 
   .settings-field label{
     display:block;
@@ -851,7 +825,7 @@
 
         <div style="display:flex; align-items:center;">
           <button class="btn btn-primary" id="btn-save-settings">حفظ الإعدادات</button>
-          <span class="save-msg" id="save-msg">تم الحفظ بنجاح</span>
+          <span class="save-msg" id="save-msg">تم الحفظ بنجاح ✓</span>
         </div>
       </div>
     </section>
@@ -964,10 +938,6 @@
           <option value="payable">مستحق علينا</option>
           <option value="receivable">مستحق لنا</option>
         </select>
-      </div>
-      <div class="field span-2 checkbox-field">
-        <input type="checkbox" id="add-needs_review">
-        <label style="margin:0;">تحتاج مراجعة</label>
       </div>
     </div>
     <div class="modal-actions">
@@ -1116,7 +1086,6 @@
     var msg = document.getElementById('save-msg');
     msg.classList.add('show');
     setTimeout(function(){ msg.classList.remove('show'); }, 2200);
-    // if a webhook url now exists and dashboard is empty, try loading
     if (getActiveWebhookUrl() && state.invoices.length === 0 && !state.isLoading){
       refreshData();
     }
@@ -1166,7 +1135,7 @@
       var now = new Date();
       document.getElementById('last-updated').textContent = 'آخر تحديث: ' + now.toLocaleString('en-US');
       applyFiltersAndRender();
-    }).catch(function(err){
+    }).catch(function(){
       state.isLoading = false;
       state.loadFailed = true;
       setTableMessage(
@@ -1184,31 +1153,25 @@
   // ---------- filtering ----------
   function matchesFilters(item){
     var f = state.filters;
-
     if (f.direction !== "all" && item.direction !== f.direction) return false;
-
     if (f.review !== "all"){
       var needsReview = item.needs_review === true;
       if (f.review === "yes" && !needsReview) return false;
       if (f.review === "no" && needsReview) return false;
     }
-
     if (f.docType !== "all" && item.document_type !== f.docType) return false;
-
     if (f.dateFrom){
       if (isNullish(item.invoice_date) || item.invoice_date < f.dateFrom) return false;
     }
     if (f.dateTo){
       if (isNullish(item.invoice_date) || item.invoice_date > f.dateTo) return false;
     }
-
     if (f.search){
       var q = f.search.toLowerCase();
       var vendor = nullSafeText(item.vendor_name).toLowerCase();
       var invNum = nullSafeText(item.invoice_number).toLowerCase();
       if (vendor.indexOf(q) === -1 && invNum.indexOf(q) === -1) return false;
     }
-
     return true;
   }
 
@@ -1222,10 +1185,8 @@
   function sortFiltered(){
     var col = state.sort.col;
     var dir = state.sort.dir === "asc" ? 1 : -1;
-
     state.filtered.sort(function(a, b){
       var av = a[col], bv = b[col];
-
       if (col === "total_amount"){
         av = parseAmount(av); bv = parseAmount(bv);
         return (av - bv) * dir;
@@ -1234,7 +1195,6 @@
         av = av === true ? 1 : 0; bv = bv === true ? 1 : 0;
         return (av - bv) * dir;
       }
-
       av = isNullish(av) ? "" : String(av).toLowerCase();
       bv = isNullish(bv) ? "" : String(bv).toLowerCase();
       if (av < bv) return -1 * dir;
@@ -1247,14 +1207,12 @@
   function renderKPIs(list){
     var total = list.length;
     var payableSum = 0, receivableSum = 0, reviewCount = 0;
-
     list.forEach(function(item){
       var amt = parseAmount(item.total_amount);
       if (item.direction === "payable") payableSum += amt;
       if (item.direction === "receivable") receivableSum += amt;
       if (item.needs_review === true) reviewCount++;
     });
-
     document.getElementById('kpi-total').textContent = total.toLocaleString('en-US');
     document.getElementById('kpi-payable').textContent = formatAmount(payableSum);
     document.getElementById('kpi-receivable').textContent = formatAmount(receivableSum);
@@ -1267,11 +1225,7 @@
     var pagination = document.getElementById('pagination');
 
     if (state.filtered.length === 0){
-      if (state.invoices.length === 0 && !state.loadFailed){
-        // handled by refreshData / initial state already
-      } else {
-        setTableMessage('<div class="table-empty">لا توجد فواتير مطابقة لهذا الفلتر.</div>');
-      }
+      setTableMessage('<div class="table-empty">لا توجد فواتير مطابقة لهذا الفلتر.</div>');
       return;
     }
 
@@ -1321,7 +1275,6 @@
       });
     });
 
-    // pagination
     pagination.style.display = 'flex';
     var info = document.getElementById('pagination-info');
     var from = start + 1;
@@ -1337,10 +1290,8 @@
     html += '<button class="page-btn" id="pg-next" ' + (state.page === totalPages ? 'disabled' : '') + '>التالي</button>';
     btnsWrap.innerHTML = html;
 
-    var prevBtn = document.getElementById('pg-prev');
-    var nextBtn = document.getElementById('pg-next');
-    if (prevBtn) prevBtn.addEventListener('click', function(){ state.page--; renderTable(); });
-    if (nextBtn) nextBtn.addEventListener('click', function(){ state.page++; renderTable(); });
+    document.getElementById('pg-prev').addEventListener('click', function(){ state.page--; renderTable(); });
+    document.getElementById('pg-next').addEventListener('click', function(){ state.page++; renderTable(); });
     document.querySelectorAll('[data-page]').forEach(function(btn){
       btn.addEventListener('click', function(){
         state.page = parseInt(btn.getAttribute('data-page'), 10);
@@ -1368,9 +1319,9 @@
   });
 
   // ---------- filters wiring ----------
-  function bindFilter(id, key, transform){
+  function bindFilter(id, key){
     document.getElementById(id).addEventListener('change', function(e){
-      state.filters[key] = transform ? transform(e.target.value) : e.target.value;
+      state.filters[key] = e.target.value;
       state.page = 1;
       applyFiltersAndRender();
     });
@@ -1405,7 +1356,7 @@
     applyFiltersAndRender();
   });
 
-  // ---------- refresh button ----------
+  // ---------- refresh ----------
   document.getElementById('btn-refresh').addEventListener('click', refreshData);
 
   // ---------- auto refresh ----------
@@ -1428,7 +1379,6 @@
   function openEditModal(rowNumber){
     var item = state.invoices.find(function(i){ return i.row_number === rowNumber; });
     if (!item) return;
-
     document.getElementById('edit-vendor_name').value = nullSafeText(item.vendor_name);
     document.getElementById('edit-invoice_number').value = nullSafeText(item.invoice_number);
     document.getElementById('edit-invoice_date').value = nullSafeText(item.invoice_date);
@@ -1438,7 +1388,6 @@
     document.getElementById('edit-currency').value = nullSafeText(item.currency);
     document.getElementById('edit-direction').value = item.direction || 'payable';
     document.getElementById('edit-review_reason').value = nullSafeText(item.review_reason);
-
     document.getElementById('edit-modal-overlay').setAttribute('data-row', rowNumber);
     document.getElementById('edit-modal-overlay').classList.add('active');
   }
@@ -1498,7 +1447,6 @@
     });
     document.getElementById('add-document_type').value = 'invoice';
     document.getElementById('add-direction').value = 'payable';
-    document.getElementById('add-needs_review').checked = false;
     document.getElementById('add-modal-overlay').classList.add('active');
   });
 
@@ -1509,16 +1457,6 @@
   document.getElementById('btn-add-cancel').addEventListener('click', closeAddModal);
   document.getElementById('add-modal-overlay').addEventListener('click', function(e){
     if (e.target === this) closeAddModal();
-  });
-
-  // ---------- reason view modal ----------
-  function closeReasonModal(){
-    document.getElementById('reason-modal-overlay').classList.remove('active');
-  }
-
-  document.getElementById('btn-reason-close').addEventListener('click', closeReasonModal);
-  document.getElementById('reason-modal-overlay').addEventListener('click', function(e){
-    if (e.target === this) closeReasonModal();
   });
 
   document.getElementById('btn-add-save').addEventListener('click', function(){
@@ -1534,7 +1472,7 @@
       currency: document.getElementById('add-currency').value.trim(),
       direction: document.getElementById('add-direction').value,
       document_type: document.getElementById('add-document_type').value,
-      needs_review: document.getElementById('add-needs_review').checked,
+      needs_review: false,
       review_reason: ''
     };
 
@@ -1557,6 +1495,14 @@
       saveBtn.textContent = 'حفظ الفاتورة';
       alert('تعذّر حفظ الفاتورة. حاول مرة أخرى.');
     });
+  });
+
+  // ---------- reason modal ----------
+  document.getElementById('btn-reason-close').addEventListener('click', function(){
+    document.getElementById('reason-modal-overlay').classList.remove('active');
+  });
+  document.getElementById('reason-modal-overlay').addEventListener('click', function(e){
+    if (e.target === this) document.getElementById('reason-modal-overlay').classList.remove('active');
   });
 
   // ---------- init ----------
