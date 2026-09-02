@@ -113,6 +113,57 @@
     border-color:rgba(255,109,90,.25);
   }
 
+  .sidebar-footer{
+    margin-top:auto;
+    padding-top:16px;
+    border-top:1px solid var(--border);
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+  }
+
+  .btn-refresh-all{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:8px;
+    width:100%;
+    background:var(--accent);
+    border:1px solid var(--accent);
+    color:#1a0d0a;
+    border-radius:var(--radius-sm);
+    padding:10px 14px;
+    font-size:14px;
+    font-weight:700;
+    cursor:pointer;
+    transition:background .15s ease, border-color .15s ease, opacity .15s ease;
+  }
+
+  .btn-refresh-all:hover{
+    background:#ff8271;
+    border-color:#ff8271;
+  }
+
+  .btn-refresh-all:disabled{
+    opacity:.7;
+    cursor:default;
+  }
+
+  .btn-refresh-all .ic{
+    display:inline-block;
+    transition:transform .2s ease;
+  }
+
+  .btn-refresh-all.spinning .ic{
+    animation:spin .8s linear infinite;
+  }
+
+  .sidebar-footer .global-last-updated{
+    font-size:11.5px;
+    color:var(--text-faint);
+    text-align:center;
+  }
+
   .main{
     flex:1;
     min-width:0;
@@ -707,6 +758,14 @@
     <div class="nav-item" data-view="expenses"><span class="ic">💸</span><span>المصاريف العمومية</span></div>
     <div class="nav-item" data-view="reports"><span class="ic">📊</span><span>التقارير المالية</span></div>
     <div class="nav-item" data-view="settings"><span class="ic">⚙️</span><span>الإعدادات</span></div>
+
+    <div class="sidebar-footer">
+      <button class="btn-refresh-all" id="btn-refresh-all" title="تحديث بيانات كل الصفحات دفعة واحدة">
+        <span class="ic">⟳</span>
+        <span id="btn-refresh-all-label">تحديث الكل</span>
+      </button>
+      <span class="global-last-updated" id="global-last-updated">لم يتم التحديث الشامل بعد</span>
+    </div>
   </aside>
 
   <main class="main">
@@ -783,7 +842,6 @@
       <div class="toolbar">
         <div class="toolbar-left">
           <input type="text" class="search-box" id="search-box" placeholder="بحث باسم المورد أو رقم الفاتورة...">
-          <button class="btn btn-primary" id="btn-refresh">تحديث فوري</button>
           <div class="autorefresh">
             <label class="switch">
               <input type="checkbox" id="autorefresh-toggle">
@@ -868,7 +926,6 @@
             <option value="داشت">داشت</option>
             <option value="تشغيل_للغير">تشغيل للغير</option>
           </select>
-          <button class="btn btn-primary" id="sales-btn-refresh">⟳ تحديث</button>
         </div>
         <div class="toolbar-right">
           <button class="btn" id="sales-btn-add">+ فاتورة مبيعات جديدة</button>
@@ -926,7 +983,6 @@
       <div class="toolbar">
         <div class="toolbar-left">
           <input type="text" class="search-box" id="purch-search" placeholder="بحث باسم المورد أو الخامة...">
-          <button class="btn btn-primary" id="purch-btn-refresh">⟳ تحديث</button>
         </div>
         <div class="toolbar-right">
           <button class="btn" id="purch-btn-add">+ فاتورة مشتريات جديدة</button>
@@ -990,7 +1046,6 @@
             <option value="قيد_التنفيذ">قيد التنفيذ</option>
             <option value="ملغي">ملغي</option>
           </select>
-          <button class="btn btn-primary" id="prod-btn-refresh">⟳ تحديث</button>
         </div>
         <div class="toolbar-right">
           <button class="btn" id="prod-btn-add">+ أمر إنتاج جديد</button>
@@ -1053,7 +1108,6 @@
             <option value="تام">منتج تام</option>
           </select>
           <input type="text" class="search-box" id="inv-search" placeholder="بحث بالصنف...">
-          <button class="btn btn-primary" id="inv-btn-refresh">⟳ تحديث</button>
         </div>
         <div class="toolbar-right">
           <button class="btn" id="inv-btn-add">+ تعديل مخزون</button>
@@ -1118,7 +1172,6 @@
             <option value="مورد">موردون فقط</option>
           </select>
           <input type="text" class="search-box" id="acc-search" placeholder="بحث بالاسم...">
-          <button class="btn btn-primary" id="acc-btn-refresh">⟳ تحديث</button>
         </div>
         <div class="toolbar-right">
           <button class="btn" id="acc-btn-add">+ عميل / مورد جديد</button>
@@ -1184,7 +1237,6 @@
             <option value="09">سبتمبر</option><option value="10">أكتوبر</option>
             <option value="11">نوفمبر</option><option value="12">ديسمبر</option>
           </select>
-          <button class="btn btn-primary" id="emp-btn-refresh">⟳ تحديث</button>
         </div>
         <div class="toolbar-right">
           <button class="btn" id="emp-btn-add">+ موظف جديد</button>
@@ -1252,7 +1304,6 @@
             <option value="أخرى">أخرى</option>
           </select>
           <input type="text" class="search-box" id="exp-search" placeholder="بحث في المصاريف...">
-          <button class="btn btn-primary" id="exp-btn-refresh">⟳ تحديث</button>
         </div>
         <div class="toolbar-right">
           <button class="btn" id="exp-btn-add">+ مصروف جديد</button>
@@ -1293,7 +1344,6 @@
         <button class="btn" id="rep-btn-inventory">تقرير المخزون</button>
         <button class="btn" id="rep-btn-customers">كشف العملاء</button>
         <button class="btn" id="rep-btn-suppliers">كشف الموردين</button>
-        <button class="btn btn-primary" id="rep-btn-refresh" style="margin-right:auto;">⟳ تحديث التقارير</button>
       </div>
 
       <!-- Income Statement -->
@@ -2080,7 +2130,7 @@
     state.loadFailed = false;
     setTableMessage('<div class="table-loading"><div class="spinner"></div>جارٍ تحميل البيانات...</div>');
 
-    fetch(url, {
+    return fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action:'refresh', timestamp: new Date().toISOString() })
@@ -2345,9 +2395,6 @@
     applyFiltersAndRender();
   });
 
-  // ---------- refresh button ----------
-  document.getElementById('btn-refresh').addEventListener('click', refreshData);
-
   // ---------- auto refresh ----------
   function setupAutoRefresh(){
     if (state.autoRefreshTimer){
@@ -2554,6 +2601,15 @@ function escHtml(s){
 function showModal(id){ document.getElementById(id).classList.add('active'); }
 function hideModal(id){ document.getElementById(id).classList.remove('active'); }
 
+/* بعض الصفوف بترجع الاسم null لما البيانات تكون متربطة بمعرّف (client_supplier_id / product_id)
+   بدل الاسم النصي مباشرة. لحد ما n8n يبعت الاسم مع كل عملية، نعرض المعرّف كبديل مؤقت
+   بدل ما الخانة تفضل فاضية، ومع تلميح يوضح إن ده مؤقت. */
+function fallbackName(name, id, label){
+  if(name) return escHtml(name);
+  if(id) return '<span style="color:var(--text-faint)" title="لم يتم ربط الاسم بعد بانتظار مزامنة n8n">'+escHtml(label)+' #'+escHtml(id)+'</span>';
+  return '—';
+}
+
 function webhookPost(payload, btnEl, successCb){
   var url = getWebhookUrl();
   if (!url){ alert('الرجاء إعداد رابط Webhook أولاً من صفحة الإعدادات.'); return; }
@@ -2580,7 +2636,7 @@ function webhookGet(type, setLoadingFn, doneCb){
     return;
   }
   if (setLoadingFn) setLoadingFn('<div class="table-loading"><div class="spinner"></div>جارٍ التحميل...</div>');
-  fetch(url, {
+  return fetch(url, {
     method:'POST',
     headers:{'Content-Type':'application/json'},
     body: JSON.stringify({type: type, action:'get', timestamp: new Date().toISOString()})
@@ -2626,12 +2682,61 @@ function triggerPageLoad(view){
 }
 
 /* ============================================================
+   UNIFIED "REFRESH ALL" — refreshes the dashboard + every page's
+   data in one go, regardless of which page is currently open
+   ============================================================ */
+function refreshAllPages(){
+  var btn = document.getElementById('btn-refresh-all');
+  var label = document.getElementById('btn-refresh-all-label');
+  var statusEl = document.getElementById('global-last-updated');
+
+  if (btn && btn.disabled) return; // already refreshing, avoid overlapping runs
+
+  if (btn) btn.disabled = true;
+  if (btn) btn.classList.add('spinning');
+  if (label) label.textContent = 'جارٍ تحديث كل الصفحات...';
+  if (statusEl) statusEl.textContent = 'جارٍ التحديث...';
+
+  // Mark every page as already loaded so switching to it afterwards
+  // won't trigger a redundant extra load
+  ['sales','purchases','production','inventory','accounts','employees','expenses','reports']
+    .forEach(function(v){ pageLoadedFlags[v] = true; });
+
+  var tasks = [
+    refreshData(),
+    loadSalesData(),
+    loadPurchasesData(),
+    loadProductionData(),
+    loadInventoryData(),
+    loadAccountsData(),
+    loadEmployeesData(),
+    loadExpensesData(),
+    loadReportsData(typeof activeReport !== 'undefined' ? activeReport : 'income')
+  ];
+
+  Promise.allSettled(tasks).then(function(results){
+    var failed = results.filter(function(r){ return r.status === 'rejected'; }).length;
+    if (btn) btn.disabled = false;
+    if (btn) btn.classList.remove('spinning');
+    if (label) label.textContent = 'تحديث الكل';
+    if (statusEl){
+      var now = new Date().toLocaleString('en-US');
+      statusEl.textContent = failed
+        ? ('تم التحديث مع تعذّر ' + failed + ' صفحة — ' + now)
+        : ('آخر تحديث شامل: ' + now);
+    }
+  });
+}
+
+document.getElementById('btn-refresh-all').addEventListener('click', refreshAllPages);
+
+/* ============================================================
    SALES PAGE
    ============================================================ */
 var salesData = [];
 
 function loadSalesData(){
-  webhookGet('مبيعات', function(msg){
+  return webhookGet('مبيعات', function(msg){
     var colspan = 9;
     document.getElementById('sales-table-body').innerHTML = '<tr><td colspan="'+colspan+'">'+msg+'</td></tr>';
   }, function(data){
@@ -2645,7 +2750,8 @@ function renderSalesTable(){
   var typeF = document.getElementById('sales-filter-type').value;
   var filtered = salesData.filter(function(r){
     var matchType = typeF === 'all' || r.sale_type === typeF;
-    var matchSearch = !search || (r.customer||'').toLowerCase().includes(search) || (r.product||'').toLowerCase().includes(search);
+    var matchSearch = !search || (r.customer||'').toLowerCase().includes(search) || (r.product||'').toLowerCase().includes(search) ||
+      String(r.client_supplier_id||'').toLowerCase().includes(search) || String(r.product_id||'').toLowerCase().includes(search);
     return matchType && matchSearch;
   });
 
@@ -2669,9 +2775,9 @@ function renderSalesTable(){
     var typeLabel = {منتج_تام:'منتج تام', داشت:'داشت', تشغيل_للغير:'تشغيل للغير'}[r.sale_type] || r.sale_type;
     return '<tr>'+
       '<td>'+escHtml(r.date||'—')+'</td>'+
-      '<td>'+escHtml(r.customer||'—')+'</td>'+
+      '<td>'+fallbackName(r.customer, r.client_supplier_id, 'عميل')+'</td>'+
       '<td><span class="badge receivable">'+escHtml(typeLabel)+'</span></td>'+
-      '<td>'+escHtml(r.product||'—')+'</td>'+
+      '<td>'+fallbackName(r.product, r.product_id, 'منتج')+'</td>'+
       '<td>'+escHtml(r.qty||'0')+' '+escHtml(r.unit||'')+'</td>'+
       '<td>'+fmtMoney(r.price)+'</td>'+
       '<td><strong>'+fmtMoney(r.total)+'</strong></td>'+
@@ -2681,10 +2787,6 @@ function renderSalesTable(){
   }).join('');
 }
 
-document.getElementById('sales-btn-refresh').addEventListener('click', function(){
-  pageLoadedFlags['sales'] = true;
-  loadSalesData();
-});
 document.getElementById('sales-search').addEventListener('input', renderSalesTable);
 document.getElementById('sales-filter-type').addEventListener('change', renderSalesTable);
 
@@ -2730,7 +2832,7 @@ document.getElementById('sales-add-save').addEventListener('click', function(){
 var purchData = [];
 
 function loadPurchasesData(){
-  webhookGet('مشتريات', function(msg){
+  return webhookGet('مشتريات', function(msg){
     document.getElementById('purch-table-body').innerHTML = '<tr><td colspan="9">'+msg+'</td></tr>';
   }, function(data){
     purchData = Array.isArray(data) ? data : (Array.isArray(data.data) ? data.data : []);
@@ -2741,7 +2843,8 @@ function loadPurchasesData(){
 function renderPurchTable(){
   var search = (document.getElementById('purch-search').value||'').toLowerCase();
   var filtered = purchData.filter(function(r){
-    return !search || (r.supplier||'').toLowerCase().includes(search) || (r.material||'').toLowerCase().includes(search);
+    return !search || (r.supplier||'').toLowerCase().includes(search) || (r.material||'').toLowerCase().includes(search) ||
+      String(r.client_supplier_id||'').toLowerCase().includes(search) || String(r.product_id||'').toLowerCase().includes(search);
   });
 
   var totalAmt = 0, suppliers = new Set(), thisMonth = 0;
@@ -2749,7 +2852,7 @@ function renderPurchTable(){
   purchData.forEach(function(r){
     var v = parseFloat(r.total)||0;
     totalAmt += v;
-    if(r.supplier) suppliers.add(r.supplier);
+    if(r.supplier || r.client_supplier_id) suppliers.add(r.supplier || ('#'+r.client_supplier_id));
     if(r.date && r.date.startsWith(ym)) thisMonth += v;
   });
   document.getElementById('purch-kpi-total').innerHTML = '<span class="cur">ج.م</span>'+fmtMoney(totalAmt);
@@ -2765,8 +2868,8 @@ function renderPurchTable(){
   tbody.innerHTML = filtered.map(function(r){
     return '<tr>'+
       '<td>'+escHtml(r.date||'—')+'</td>'+
-      '<td>'+escHtml(r.supplier||'—')+'</td>'+
-      '<td>'+escHtml(r.material||'—')+'</td>'+
+      '<td>'+fallbackName(r.supplier, r.client_supplier_id, 'مورد')+'</td>'+
+      '<td>'+fallbackName(r.material, r.product_id, 'خامة')+'</td>'+
       '<td>'+escHtml(r.qty||'0')+'</td>'+
       '<td>'+escHtml(r.unit||'—')+'</td>'+
       '<td>'+fmtMoney(r.price)+'</td>'+
@@ -2777,7 +2880,6 @@ function renderPurchTable(){
   }).join('');
 }
 
-document.getElementById('purch-btn-refresh').addEventListener('click', function(){ loadPurchasesData(); });
 document.getElementById('purch-search').addEventListener('input', renderPurchTable);
 
 document.getElementById('purch-btn-add').addEventListener('click', function(){
@@ -2821,7 +2923,7 @@ document.getElementById('purch-add-save').addEventListener('click', function(){
 var prodData = [];
 
 function loadProductionData(){
-  webhookGet('امر_انتاج', function(msg){
+  return webhookGet('امر_انتاج', function(msg){
     document.getElementById('prod-table-body').innerHTML = '<tr><td colspan="9">'+msg+'</td></tr>';
   }, function(data){
     prodData = Array.isArray(data) ? data : (Array.isArray(data.data) ? data.data : []);
@@ -2834,7 +2936,8 @@ function renderProdTable(){
   var statusF = document.getElementById('prod-filter-status').value;
   var filtered = prodData.filter(function(r){
     var matchStatus = statusF==='all' || r.status===statusF;
-    var matchSearch = !search || (r.product||'').toLowerCase().includes(search) || (r.order_num||'').toLowerCase().includes(search);
+    var matchSearch = !search || (r.product||'').toLowerCase().includes(search) || (r.order_num||'').toLowerCase().includes(search) ||
+      String(r.product_id||'').toLowerCase().includes(search);
     return matchStatus && matchSearch;
   });
 
@@ -2860,7 +2963,7 @@ function renderProdTable(){
     return '<tr>'+
       '<td>'+escHtml(r.order_num||'—')+'</td>'+
       '<td>'+escHtml(r.date||'—')+'</td>'+
-      '<td>'+escHtml(r.product||'—')+'</td>'+
+      '<td>'+fallbackName(r.product, r.product_id, 'منتج')+'</td>'+
       '<td>'+escHtml(r.qty||'0')+' '+escHtml(r.unit||'')+'</td>'+
       '<td style="max-width:200px;white-space:normal;font-size:12.5px;color:var(--text-dim);">'+materials+'</td>'+
       '<td>'+fmtMoney(r.unit_cost)+'</td>'+
@@ -2871,7 +2974,6 @@ function renderProdTable(){
   }).join('');
 }
 
-document.getElementById('prod-btn-refresh').addEventListener('click', function(){ loadProductionData(); });
 document.getElementById('prod-search').addEventListener('input', renderProdTable);
 document.getElementById('prod-filter-status').addEventListener('change', renderProdTable);
 
@@ -2925,7 +3027,7 @@ document.getElementById('prod-add-save').addEventListener('click', function(){
 var invData = [];
 
 function loadInventoryData(){
-  webhookGet('مخزون', function(msg){
+  return webhookGet('مخزون', function(msg){
     document.getElementById('inv-table-body').innerHTML = '<tr><td colspan="9">'+msg+'</td></tr>';
   }, function(data){
     invData = Array.isArray(data) ? data : (Array.isArray(data.data) ? data.data : []);
@@ -2989,7 +3091,6 @@ function renderInvTable(){
   }).join('');
 }
 
-document.getElementById('inv-btn-refresh').addEventListener('click', function(){ loadInventoryData(); });
 document.getElementById('inv-search').addEventListener('input', renderInvTable);
 document.getElementById('inv-filter-type').addEventListener('change', renderInvTable);
 
@@ -3020,7 +3121,7 @@ document.getElementById('inv-add-save').addEventListener('click', function(){
 var accData = [];
 
 function loadAccountsData(){
-  webhookGet('موردين', function(msg){
+  return webhookGet('موردين', function(msg){
     document.getElementById('acc-table-body').innerHTML = '<tr><td colspan="8">'+msg+'</td></tr>';
   }, function(data){
     accData = Array.isArray(data) ? data : (Array.isArray(data.data) ? data.data : []);
@@ -3092,7 +3193,6 @@ window.openAccStatement = function(name){
   });
 };
 
-document.getElementById('acc-btn-refresh').addEventListener('click', function(){ loadAccountsData(); });
 document.getElementById('acc-search').addEventListener('input', renderAccTable);
 document.getElementById('acc-filter-type').addEventListener('change', renderAccTable);
 
@@ -3123,7 +3223,7 @@ document.getElementById('acc-add-save').addEventListener('click', function(){
 var empData = [];
 
 function loadEmployeesData(){
-  webhookGet('موظفين', function(msg){
+  return webhookGet('موظفين', function(msg){
     document.getElementById('emp-table-body').innerHTML = '<tr><td colspan="10">'+msg+'</td></tr>';
   }, function(data){
     empData = Array.isArray(data) ? data : (Array.isArray(data.data) ? data.data : []);
@@ -3181,7 +3281,6 @@ function renderEmpTable(){
   }).join('');
 }
 
-document.getElementById('emp-btn-refresh').addEventListener('click', function(){ loadEmployeesData(); });
 document.getElementById('emp-search').addEventListener('input', renderEmpTable);
 document.getElementById('emp-filter-month').addEventListener('change', renderEmpTable);
 
@@ -3222,7 +3321,7 @@ document.getElementById('emp-add-save').addEventListener('click', function(){
 var expData = [];
 
 function loadExpensesData(){
-  webhookGet('مصاريف', function(msg){
+  return webhookGet('مصاريف', function(msg){
     document.getElementById('exp-table-body').innerHTML = '<tr><td colspan="8">'+msg+'</td></tr>';
   }, function(data){
     expData = Array.isArray(data) ? data : (Array.isArray(data.data) ? data.data : []);
@@ -3271,7 +3370,6 @@ function renderExpTable(){
   }).join('');
 }
 
-document.getElementById('exp-btn-refresh').addEventListener('click', function(){ loadExpensesData(); });
 document.getElementById('exp-search').addEventListener('input', renderExpTable);
 document.getElementById('exp-filter-cat').addEventListener('change', renderExpTable);
 
@@ -3318,10 +3416,9 @@ document.getElementById('rep-btn-balance').addEventListener('click', function(){
 document.getElementById('rep-btn-inventory').addEventListener('click', function(){ showReport('inventory'); loadReportsData('inventory'); });
 document.getElementById('rep-btn-customers').addEventListener('click', function(){ showReport('customers'); loadReportsData('customers'); });
 document.getElementById('rep-btn-suppliers').addEventListener('click', function(){ showReport('suppliers'); loadReportsData('suppliers'); });
-document.getElementById('rep-btn-refresh').addEventListener('click', function(){ loadReportsData(activeReport); });
 
 function loadReportsData(reportType){
-  webhookGet('تقارير', null, function(data){
+  return webhookGet('تقارير', null, function(data){
     var rep = data[reportType] || data || {};
     renderReport(reportType, rep);
   });
