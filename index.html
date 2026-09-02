@@ -1958,6 +1958,44 @@
 </div>
 
 <script>
+/* ============================================================
+   GLOBAL SHARED HELPERS (used by both script blocks below)
+   ============================================================
+   الويبهوك بيرجّع كل بيانات النظام مع بعض في كائن واحد فيه مفاتيح
+   (invoices, sales, purchases, inventory, accounts, employees, expenses,
+   production, raw_materials, products, income_statement) — أحيانًا لفّاف
+   جوّه array من عنصر واحد [{...}]. الدالتين دول بيستخرجوا الجزء الصح
+   لكل صفحة من أي شكل يرجّعه الويبهوك (array فيه العنصر الكبير، كائن
+   مباشر، أو array بيانات جاهزة زي الشكل القديم) عشان مفيش صفحة تتكسر
+   لو شكل الرد اختلف. معرّفين هنا (بره أي IIFE) عشان يبقوا متاحين لسكريبت
+   الداشبورد وسكريبت باقي الصفحات مع بعض. */
+function extractRecords(raw, key){
+  var src = raw;
+
+  if (Array.isArray(src) && src.length === 1 && src[0] && typeof src[0] === 'object' && !Array.isArray(src[0]) &&
+      (Array.isArray(src[0][key]) || Array.isArray(src[0].data))){
+    src = src[0];
+  }
+
+  if (Array.isArray(src)) return src;
+
+  if (src && typeof src === 'object'){
+    if (Array.isArray(src[key])) return src[key];
+    if (Array.isArray(src.data)) return src.data;
+  }
+  return [];
+}
+
+function unwrapPayload(raw){
+  var src = raw;
+  if (Array.isArray(src) && src.length === 1 && src[0] && typeof src[0] === 'object' && !Array.isArray(src[0])){
+    src = src[0];
+  }
+  return (src && typeof src === 'object' && !Array.isArray(src)) ? src : {};
+}
+</script>
+
+<script>
 (function(){
   "use strict";
 
@@ -2119,6 +2157,16 @@
     document.getElementById('pagination').style.display = 'none';
   }
 
+  function applyDashboardPayload(data){
+    state.invoices = dedupeByRow(extractRecords(data, 'invoices'));
+    state.isLoading = false;
+    state.loadFailed = false;
+    state.page = 1;
+    var now = new Date();
+    document.getElementById('last-updated').textContent = 'آخر تحديث: ' + now.toLocaleString('en-US');
+    applyFiltersAndRender();
+  }
+
   function refreshData(){
     var url = getActiveWebhookUrl();
     if (!url){
@@ -2138,13 +2186,7 @@
       if (!res.ok) throw new Error('HTTP ' + res.status);
       return res.json();
     }).then(function(data){
-      var list = Array.isArray(data) ? data : (Array.isArray(data.invoices) ? data.invoices : []);
-      state.invoices = dedupeByRow(list);
-      state.isLoading = false;
-      state.page = 1;
-      var now = new Date();
-      document.getElementById('last-updated').textContent = 'آخر تحديث: ' + now.toLocaleString('en-US');
-      applyFiltersAndRender();
+      applyDashboardPayload(data);
     }).catch(function(err){
       state.isLoading = false;
       state.loadFailed = true;
@@ -2159,6 +2201,11 @@
       renderKPIs([]);
     });
   }
+
+  // مُتاحة لسكريبت باقي الصفحات عشان "تحديث الكل" يقدر يحدّث الداشبورد
+  // من نفس رد الويبهوك اللي جابه لباقي الصفحات، من غير طلب شبكة إضافي
+  window.refreshData = refreshData;
+  window.applyDashboardPayload = applyDashboardPayload;
 
   // ---------- filtering ----------
   function matchesFilters(item){
@@ -2682,8 +2729,11 @@ function triggerPageLoad(view){
 }
 
 /* ============================================================
-   UNIFIED "REFRESH ALL" — refreshes the dashboard + every page's
-   data in one go, regardless of which page is currently open
+   UNIFIED "REFRESH ALL" — one single request that fills the
+   dashboard + every page's data at once, since the webhook already
+   returns everything (invoices, sales, purchases, inventory,
+   accounts, employees, expenses, production, raw_materials,
+   income_statement) together in a single response.
    ============================================================ */
 function refreshAllPages(){
   var btn = document.getElementById('btn-refresh-all');
@@ -2692,39 +2742,68 @@ function refreshAllPages(){
 
   if (btn && btn.disabled) return; // already refreshing, avoid overlapping runs
 
+  var url = getWebhookUrl();
+  if (!url){
+    if (statusEl) statusEl.textContent = 'لم يتم إعداد رابط Webhook بعد. من فضلك أدخله في صفحة الإعدادات.';
+    return;
+  }
+
   if (btn) btn.disabled = true;
   if (btn) btn.classList.add('spinning');
   if (label) label.textContent = 'جارٍ تحديث كل الصفحات...';
   if (statusEl) statusEl.textContent = 'جارٍ التحديث...';
 
-  // Mark every page as already loaded so switching to it afterwards
-  // won't trigger a redundant extra load
-  ['sales','purchases','production','inventory','accounts','employees','expenses','reports']
-    .forEach(function(v){ pageLoadedFlags[v] = true; });
+  fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action:'refresh_all', timestamp: new Date().toISOString() })
+  }).then(function(res){
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    return res.json();
+  }).then(function(raw){
+    // ---- الداشبورد (من نفس المفتاح invoices جوّه نفس الرد) ----
+    if (typeof window.applyDashboardPayload === 'function') window.applyDashboardPayload(raw);
 
-  var tasks = [
-    refreshData(),
-    loadSalesData(),
-    loadPurchasesData(),
-    loadProductionData(),
-    loadInventoryData(),
-    loadAccountsData(),
-    loadEmployeesData(),
-    loadExpensesData(),
-    loadReportsData(typeof activeReport !== 'undefined' ? activeReport : 'income')
-  ];
+    // ---- باقي الصفحات، كلها من نفس الرد، من غير أي طلب شبكة إضافي ----
+    salesData = extractRecords(raw, 'sales');
+    renderSalesTable();
 
-  Promise.allSettled(tasks).then(function(results){
-    var failed = results.filter(function(r){ return r.status === 'rejected'; }).length;
+    purchData = extractRecords(raw, 'purchases');
+    renderPurchTable();
+
+    rawMaterialsData = extractRecords(raw, 'raw_materials');
+    prodData = extractRecords(raw, 'production');
+    renderProdTable();
+
+    invData = extractRecords(raw, 'inventory');
+    renderInvTable();
+
+    accData = extractRecords(raw, 'accounts');
+    renderAccTable();
+
+    empData = extractRecords(raw, 'employees');
+    renderEmpTable();
+
+    expData = extractRecords(raw, 'expenses');
+    renderExpTable();
+
+    var currentReport = (typeof activeReport !== 'undefined') ? activeReport : 'income';
+    renderReport(currentReport, deriveReportData(currentReport, raw));
+
+    // كل الصفحات بقت محمّلة، فمفيش داعي يتحمّلوا تاني لو المستخدم فتحهم
+    ['sales','purchases','production','inventory','accounts','employees','expenses','reports']
+      .forEach(function(v){ pageLoadedFlags[v] = true; });
+
+    var now = new Date().toLocaleString('en-US');
+    if (statusEl) statusEl.textContent = 'آخر تحديث شامل: ' + now;
+  }).catch(function(){
+    if (statusEl) statusEl.textContent = 'تعذّر التحديث الشامل. تحقق من رابط الـ Webhook أو الاتصال بالإنترنت.';
+    // نعرض حالة الخطأ في الداشبورد على الأقل (فيها زرار إعادة محاولة)
+    if (typeof window.refreshData === 'function') window.refreshData();
+  }).finally(function(){
     if (btn) btn.disabled = false;
     if (btn) btn.classList.remove('spinning');
     if (label) label.textContent = 'تحديث الكل';
-    if (statusEl){
-      var now = new Date().toLocaleString('en-US');
-      statusEl.textContent = failed
-        ? ('تم التحديث مع تعذّر ' + failed + ' صفحة — ' + now)
-        : ('آخر تحديث شامل: ' + now);
-    }
   });
 }
 
@@ -2740,7 +2819,7 @@ function loadSalesData(){
     var colspan = 9;
     document.getElementById('sales-table-body').innerHTML = '<tr><td colspan="'+colspan+'">'+msg+'</td></tr>';
   }, function(data){
-    salesData = Array.isArray(data) ? data : (Array.isArray(data.data) ? data.data : []);
+    salesData = extractRecords(data, 'sales');
     renderSalesTable();
   });
 }
@@ -2835,7 +2914,7 @@ function loadPurchasesData(){
   return webhookGet('مشتريات', function(msg){
     document.getElementById('purch-table-body').innerHTML = '<tr><td colspan="9">'+msg+'</td></tr>';
   }, function(data){
-    purchData = Array.isArray(data) ? data : (Array.isArray(data.data) ? data.data : []);
+    purchData = extractRecords(data, 'purchases');
     renderPurchTable();
   });
 }
@@ -2921,12 +3000,21 @@ document.getElementById('purch-add-save').addEventListener('click', function(){
    PRODUCTION PAGE
    ============================================================ */
 var prodData = [];
+var rawMaterialsData = [];
+
+function findRawMaterialById(id){
+  for (var i=0; i<rawMaterialsData.length; i++){
+    if (rawMaterialsData[i] && rawMaterialsData[i].id === id) return rawMaterialsData[i];
+  }
+  return null;
+}
 
 function loadProductionData(){
   return webhookGet('امر_انتاج', function(msg){
     document.getElementById('prod-table-body').innerHTML = '<tr><td colspan="9">'+msg+'</td></tr>';
   }, function(data){
-    prodData = Array.isArray(data) ? data : (Array.isArray(data.data) ? data.data : []);
+    prodData = extractRecords(data, 'production');
+    rawMaterialsData = extractRecords(data, 'raw_materials');
     renderProdTable();
   });
 }
@@ -2959,7 +3047,16 @@ function renderProdTable(){
   }
   tbody.innerHTML = filtered.map(function(r){
     var statusClass = r.status==='مكتمل'?'review-no':(r.status==='ملغي'?'review-yes':'payable');
-    var materials = Array.isArray(r.materials) ? r.materials.map(function(m){ return escHtml(m.name||m)+' ('+escHtml(m.qty||'')+')'; }).join('، ') : escHtml(r.materials||'—');
+    var materials = Array.isArray(r.materials) ? r.materials.map(function(m){
+      if (m && typeof m === 'object'){
+        var mat = findRawMaterialById(m.id);
+        var mName = m.name || (mat ? (mat.name || mat.item) : null);
+        var mQty = (m.qty != null ? m.qty : m.quantity);
+        var mUnit = m.unit || (mat ? mat.unit : '');
+        return fallbackName(mName, m.id, 'خامة') + (mQty!=null ? ' ('+escHtml(mQty)+(mUnit?(' '+escHtml(mUnit)):'')+')' : '');
+      }
+      return escHtml(String(m));
+    }).join('، ') : escHtml(r.materials||'—');
     return '<tr>'+
       '<td>'+escHtml(r.order_num||'—')+'</td>'+
       '<td>'+escHtml(r.date||'—')+'</td>'+
@@ -3030,7 +3127,7 @@ function loadInventoryData(){
   return webhookGet('مخزون', function(msg){
     document.getElementById('inv-table-body').innerHTML = '<tr><td colspan="9">'+msg+'</td></tr>';
   }, function(data){
-    invData = Array.isArray(data) ? data : (Array.isArray(data.data) ? data.data : []);
+    invData = extractRecords(data, 'inventory');
     renderInvTable();
   });
 }
@@ -3124,7 +3221,7 @@ function loadAccountsData(){
   return webhookGet('موردين', function(msg){
     document.getElementById('acc-table-body').innerHTML = '<tr><td colspan="8">'+msg+'</td></tr>';
   }, function(data){
-    accData = Array.isArray(data) ? data : (Array.isArray(data.data) ? data.data : []);
+    accData = extractRecords(data, 'accounts');
     renderAccTable();
   });
 }
@@ -3226,7 +3323,7 @@ function loadEmployeesData(){
   return webhookGet('موظفين', function(msg){
     document.getElementById('emp-table-body').innerHTML = '<tr><td colspan="10">'+msg+'</td></tr>';
   }, function(data){
-    empData = Array.isArray(data) ? data : (Array.isArray(data.data) ? data.data : []);
+    empData = extractRecords(data, 'employees');
     renderEmpTable();
   });
 }
@@ -3324,7 +3421,7 @@ function loadExpensesData(){
   return webhookGet('مصاريف', function(msg){
     document.getElementById('exp-table-body').innerHTML = '<tr><td colspan="8">'+msg+'</td></tr>';
   }, function(data){
-    expData = Array.isArray(data) ? data : (Array.isArray(data.data) ? data.data : []);
+    expData = extractRecords(data, 'expenses');
     renderExpTable();
   });
 }
@@ -3417,10 +3514,44 @@ document.getElementById('rep-btn-inventory').addEventListener('click', function(
 document.getElementById('rep-btn-customers').addEventListener('click', function(){ showReport('customers'); loadReportsData('customers'); });
 document.getElementById('rep-btn-suppliers').addEventListener('click', function(){ showReport('suppliers'); loadReportsData('suppliers'); });
 
+/* الويبهوك لسه مش راجع تقارير جاهزة لكل نوع (income/balance/inventory/...)،
+   لكنه راجع income_statement + inventory + accounts جاهزين. الدالة دي
+   بتبني شكل كل تقرير من نفس البيانات دي بدل ما تستنى مفتاح "التقرير"
+   الجاهز اللي لسه مش موجود. */
+function deriveReportData(reportType, raw){
+  if (reportType === 'income'){
+    var inc = unwrapPayload(raw).income_statement || {};
+    var revenue = parseFloat(inc['إجمالي_المبيعات']) || 0;
+    var purchasesTotal = parseFloat(inc['إجمالي_المشتريات']) || 0;
+    var overhead = parseFloat(inc['مصاريف_عمومية']) || 0;
+    var payroll = parseFloat(inc['مرتبات']) || 0;
+    var net = inc['صافي_الربح'] != null ? parseFloat(inc['صافي_الربح']) : (revenue - (purchasesTotal + overhead + payroll));
+    return {
+      total_revenue: revenue,
+      total_costs: purchasesTotal + overhead + payroll,
+      items: [
+        {label:'إجمالي المبيعات', category:'إيراد', amount: revenue},
+        {label:'إجمالي المشتريات', category:'مصروف', amount: purchasesTotal},
+        {label:'مجمل الربح', category:'إيراد', amount: parseFloat(inc['مجمل_الربح'])||0},
+        {label:'مصاريف عمومية', category:'مصروف', amount: overhead},
+        {label:'مرتبات', category:'مصروف', amount: payroll},
+        {label:'صافي الربح', category: net>=0?'إيراد':'مصروف', amount: net}
+      ]
+    };
+  }
+  if (reportType === 'inventory') return extractRecords(raw, 'inventory');
+  if (reportType === 'customers') return extractRecords(raw, 'accounts').filter(function(a){ return a && a.account_type === 'عميل'; });
+  if (reportType === 'suppliers') return extractRecords(raw, 'accounts').filter(function(a){ return a && a.account_type === 'مورد'; });
+  // 'balance': لسه مفيش شكل بيانات متفق عليه من الويبهوك — هتفضل فاضية
+  // (رسالة "لا توجد بيانات") لحد ما n8n يبعتها.
+  var payload = unwrapPayload(raw);
+  if (Array.isArray(payload.balance)) return payload.balance;
+  return [];
+}
+
 function loadReportsData(reportType){
   return webhookGet('تقارير', null, function(data){
-    var rep = data[reportType] || data || {};
-    renderReport(reportType, rep);
+    renderReport(reportType, deriveReportData(reportType, data));
   });
 }
 
