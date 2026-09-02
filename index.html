@@ -696,8 +696,16 @@
 <div class="app">
 
   <aside class="sidebar">
-    <div class="brand"><span class="dot"></span><span>متابعة الفواتير</span></div>
+    <div class="brand"><span class="dot"></span><span>محاسبة الكرتون</span></div>
     <div class="nav-item active" data-view="dashboard"><span class="ic">🏠</span><span>الرئيسية</span></div>
+    <div class="nav-item" data-view="sales"><span class="ic">🧾</span><span>المبيعات</span></div>
+    <div class="nav-item" data-view="purchases"><span class="ic">📦</span><span>المشتريات</span></div>
+    <div class="nav-item" data-view="production"><span class="ic">🏭</span><span>أوامر الإنتاج</span></div>
+    <div class="nav-item" data-view="inventory"><span class="ic">🗄️</span><span>المخازن</span></div>
+    <div class="nav-item" data-view="accounts"><span class="ic">👥</span><span>العملاء والموردون</span></div>
+    <div class="nav-item" data-view="employees"><span class="ic">👤</span><span>الموظفون والمرتبات</span></div>
+    <div class="nav-item" data-view="expenses"><span class="ic">💸</span><span>المصاريف العمومية</span></div>
+    <div class="nav-item" data-view="reports"><span class="ic">📊</span><span>التقارير المالية</span></div>
     <div class="nav-item" data-view="settings"><span class="ic">⚙️</span><span>الإعدادات</span></div>
   </aside>
 
@@ -827,6 +835,567 @@
       </div>
     </section>
 
+    <!-- ================= SALES VIEW ================= -->
+    <section id="view-sales" class="view">
+      <h1 class="page-title">المبيعات</h1>
+      <p class="page-sub">تسجيل فواتير المبيعات — منتج تام، داشت، تشغيل للغير</p>
+
+      <div class="kpi-row">
+        <div class="kpi-card is-receivable">
+          <div class="kpi-label">إجمالي المبيعات</div>
+          <div class="kpi-value" id="sales-kpi-total"><span class="cur">ج.م</span>0</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">مبيعات المنتج التام</div>
+          <div class="kpi-value" id="sales-kpi-finished"><span class="cur">ج.م</span>0</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">مبيعات الداشت</div>
+          <div class="kpi-value" id="sales-kpi-dasht"><span class="cur">ج.م</span>0</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">تشغيل للغير</div>
+          <div class="kpi-value" id="sales-kpi-external"><span class="cur">ج.م</span>0</div>
+        </div>
+      </div>
+
+      <div class="toolbar">
+        <div class="toolbar-left">
+          <input type="text" class="search-box" id="sales-search" placeholder="بحث باسم العميل أو المنتج...">
+          <select class="search-box" id="sales-filter-type" style="min-width:160px;">
+            <option value="all">كل الأنواع</option>
+            <option value="منتج_تام">منتج تام</option>
+            <option value="داشت">داشت</option>
+            <option value="تشغيل_للغير">تشغيل للغير</option>
+          </select>
+          <button class="btn btn-primary" id="sales-btn-refresh">⟳ تحديث</button>
+        </div>
+        <div class="toolbar-right">
+          <button class="btn" id="sales-btn-add">+ فاتورة مبيعات جديدة</button>
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <div class="table-scroll">
+          <table id="sales-table">
+            <thead>
+              <tr>
+                <th>التاريخ</th>
+                <th>اسم العميل</th>
+                <th>نوع البيع</th>
+                <th>المنتج</th>
+                <th>الكمية</th>
+                <th>السعر</th>
+                <th>الإجمالي</th>
+                <th>الحالة</th>
+                <th>إجراءات</th>
+              </tr>
+            </thead>
+            <tbody id="sales-table-body">
+              <tr><td colspan="9"><div class="table-loading"><div class="spinner"></div>جارٍ التحميل...</div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= PURCHASES VIEW ================= -->
+    <section id="view-purchases" class="view">
+      <h1 class="page-title">المشتريات</h1>
+      <p class="page-sub">تسجيل فواتير شراء الخامات من الموردين</p>
+
+      <div class="kpi-row">
+        <div class="kpi-card is-payable">
+          <div class="kpi-label">إجمالي المشتريات</div>
+          <div class="kpi-value" id="purch-kpi-total"><span class="cur">ج.م</span>0</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">عدد الفواتير</div>
+          <div class="kpi-value" id="purch-kpi-count">0</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">عدد الموردين</div>
+          <div class="kpi-value" id="purch-kpi-suppliers">0</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">هذا الشهر</div>
+          <div class="kpi-value" id="purch-kpi-month"><span class="cur">ج.م</span>0</div>
+        </div>
+      </div>
+
+      <div class="toolbar">
+        <div class="toolbar-left">
+          <input type="text" class="search-box" id="purch-search" placeholder="بحث باسم المورد أو الخامة...">
+          <button class="btn btn-primary" id="purch-btn-refresh">⟳ تحديث</button>
+        </div>
+        <div class="toolbar-right">
+          <button class="btn" id="purch-btn-add">+ فاتورة مشتريات جديدة</button>
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <div class="table-scroll">
+          <table id="purch-table">
+            <thead>
+              <tr>
+                <th>التاريخ</th>
+                <th>اسم المورد</th>
+                <th>الخامة</th>
+                <th>الكمية</th>
+                <th>وحدة القياس</th>
+                <th>السعر</th>
+                <th>الإجمالي</th>
+                <th>الحالة</th>
+                <th>إجراءات</th>
+              </tr>
+            </thead>
+            <tbody id="purch-table-body">
+              <tr><td colspan="9"><div class="table-loading"><div class="spinner"></div>جارٍ التحميل...</div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= PRODUCTION VIEW ================= -->
+    <section id="view-production" class="view">
+      <h1 class="page-title">أوامر الإنتاج</h1>
+      <p class="page-sub">تسجيل أوامر الإنتاج وخصم الخامات وإضافة المنتج التام تلقائياً</p>
+
+      <div class="kpi-row">
+        <div class="kpi-card">
+          <div class="kpi-label">أوامر الإنتاج الكلية</div>
+          <div class="kpi-value" id="prod-kpi-total">0</div>
+        </div>
+        <div class="kpi-card is-receivable">
+          <div class="kpi-label">مكتملة</div>
+          <div class="kpi-value" id="prod-kpi-done">0</div>
+        </div>
+        <div class="kpi-card is-payable">
+          <div class="kpi-label">قيد التنفيذ</div>
+          <div class="kpi-value" id="prod-kpi-inprogress">0</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">تكلفة الإنتاج الإجمالية</div>
+          <div class="kpi-value" id="prod-kpi-cost"><span class="cur">ج.م</span>0</div>
+        </div>
+      </div>
+
+      <div class="toolbar">
+        <div class="toolbar-left">
+          <input type="text" class="search-box" id="prod-search" placeholder="بحث برقم الأمر أو المنتج...">
+          <select class="search-box" id="prod-filter-status" style="min-width:140px;">
+            <option value="all">كل الحالات</option>
+            <option value="مكتمل">مكتمل</option>
+            <option value="قيد_التنفيذ">قيد التنفيذ</option>
+            <option value="ملغي">ملغي</option>
+          </select>
+          <button class="btn btn-primary" id="prod-btn-refresh">⟳ تحديث</button>
+        </div>
+        <div class="toolbar-right">
+          <button class="btn" id="prod-btn-add">+ أمر إنتاج جديد</button>
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <div class="table-scroll">
+          <table id="prod-table">
+            <thead>
+              <tr>
+                <th>رقم الأمر</th>
+                <th>التاريخ</th>
+                <th>المنتج</th>
+                <th>الكمية المنتجة</th>
+                <th>الخامات المستخدمة</th>
+                <th>تكلفة الوحدة</th>
+                <th>التكلفة الإجمالية</th>
+                <th>الحالة</th>
+                <th>إجراءات</th>
+              </tr>
+            </thead>
+            <tbody id="prod-table-body">
+              <tr><td colspan="9"><div class="table-loading"><div class="spinner"></div>جارٍ التحميل...</div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= INVENTORY VIEW ================= -->
+    <section id="view-inventory" class="view">
+      <h1 class="page-title">المخازن</h1>
+      <p class="page-sub">مخزن المواد الخام ومخزن المنتج التام مع تنبيهات الحد الأدنى</p>
+
+      <div class="kpi-row">
+        <div class="kpi-card">
+          <div class="kpi-label">أصناف المواد الخام</div>
+          <div class="kpi-value" id="inv-kpi-raw-items">0</div>
+        </div>
+        <div class="kpi-card is-review">
+          <div class="kpi-label">أصناف تحت الحد الأدنى</div>
+          <div class="kpi-value" id="inv-kpi-low">0</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">أصناف المنتج التام</div>
+          <div class="kpi-value" id="inv-kpi-finished-items">0</div>
+        </div>
+        <div class="kpi-card is-receivable">
+          <div class="kpi-label">قيمة المخزون الإجمالية</div>
+          <div class="kpi-value" id="inv-kpi-value"><span class="cur">ج.م</span>0</div>
+        </div>
+      </div>
+
+      <div class="toolbar">
+        <div class="toolbar-left">
+          <select class="search-box" id="inv-filter-type" style="min-width:160px;">
+            <option value="all">كل المخازن</option>
+            <option value="خام">مواد خام</option>
+            <option value="تام">منتج تام</option>
+          </select>
+          <input type="text" class="search-box" id="inv-search" placeholder="بحث بالصنف...">
+          <button class="btn btn-primary" id="inv-btn-refresh">⟳ تحديث</button>
+        </div>
+        <div class="toolbar-right">
+          <button class="btn" id="inv-btn-add">+ تعديل مخزون</button>
+        </div>
+      </div>
+
+      <div id="inv-alerts" style="margin-bottom:14px;"></div>
+
+      <div class="table-wrap">
+        <div class="table-scroll">
+          <table id="inv-table">
+            <thead>
+              <tr>
+                <th>الصنف</th>
+                <th>نوع المخزن</th>
+                <th>وحدة القياس</th>
+                <th>الكمية الحالية</th>
+                <th>الحد الأدنى</th>
+                <th>الحالة</th>
+                <th>سعر الوحدة</th>
+                <th>القيمة الإجمالية</th>
+                <th>إجراءات</th>
+              </tr>
+            </thead>
+            <tbody id="inv-table-body">
+              <tr><td colspan="9"><div class="table-loading"><div class="spinner"></div>جارٍ التحميل...</div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= ACCOUNTS VIEW ================= -->
+    <section id="view-accounts" class="view">
+      <h1 class="page-title">العملاء والموردون</h1>
+      <p class="page-sub">أرصدة وكشوف حساب العملاء والموردين</p>
+
+      <div class="kpi-row">
+        <div class="kpi-card is-receivable">
+          <div class="kpi-label">إجمالي المديونيات (لنا)</div>
+          <div class="kpi-value" id="acc-kpi-receivable"><span class="cur">ج.م</span>0</div>
+        </div>
+        <div class="kpi-card is-payable">
+          <div class="kpi-label">إجمالي المديونيات (علينا)</div>
+          <div class="kpi-value" id="acc-kpi-payable"><span class="cur">ج.م</span>0</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">عدد العملاء</div>
+          <div class="kpi-value" id="acc-kpi-customers">0</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">عدد الموردين</div>
+          <div class="kpi-value" id="acc-kpi-suppliers">0</div>
+        </div>
+      </div>
+
+      <div class="toolbar">
+        <div class="toolbar-left">
+          <select class="search-box" id="acc-filter-type" style="min-width:160px;">
+            <option value="all">عملاء وموردون</option>
+            <option value="عميل">عملاء فقط</option>
+            <option value="مورد">موردون فقط</option>
+          </select>
+          <input type="text" class="search-box" id="acc-search" placeholder="بحث بالاسم...">
+          <button class="btn btn-primary" id="acc-btn-refresh">⟳ تحديث</button>
+        </div>
+        <div class="toolbar-right">
+          <button class="btn" id="acc-btn-add">+ عميل / مورد جديد</button>
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <div class="table-scroll">
+          <table id="acc-table">
+            <thead>
+              <tr>
+                <th>الاسم</th>
+                <th>النوع</th>
+                <th>الهاتف</th>
+                <th>إجمالي الفواتير</th>
+                <th>إجمالي المدفوعات</th>
+                <th>الرصيد المتبقي</th>
+                <th>آخر معاملة</th>
+                <th>إجراءات</th>
+              </tr>
+            </thead>
+            <tbody id="acc-table-body">
+              <tr><td colspan="8"><div class="table-loading"><div class="spinner"></div>جارٍ التحميل...</div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= EMPLOYEES VIEW ================= -->
+    <section id="view-employees" class="view">
+      <h1 class="page-title">الموظفون والمرتبات</h1>
+      <p class="page-sub">بيانات الموظفين، الرواتب، الحضور والغياب، صافي المرتب</p>
+
+      <div class="kpi-row">
+        <div class="kpi-card">
+          <div class="kpi-label">إجمالي الموظفين</div>
+          <div class="kpi-value" id="emp-kpi-total">0</div>
+        </div>
+        <div class="kpi-card is-payable">
+          <div class="kpi-label">إجمالي الرواتب الأساسية</div>
+          <div class="kpi-value" id="emp-kpi-base"><span class="cur">ج.م</span>0</div>
+        </div>
+        <div class="kpi-card is-review">
+          <div class="kpi-label">إجمالي الخصومات</div>
+          <div class="kpi-value" id="emp-kpi-deductions"><span class="cur">ج.م</span>0</div>
+        </div>
+        <div class="kpi-card is-receivable">
+          <div class="kpi-label">صافي المرتبات</div>
+          <div class="kpi-value" id="emp-kpi-net"><span class="cur">ج.م</span>0</div>
+        </div>
+      </div>
+
+      <div class="toolbar">
+        <div class="toolbar-left">
+          <input type="text" class="search-box" id="emp-search" placeholder="بحث باسم الموظف...">
+          <select class="search-box" id="emp-filter-month" style="min-width:160px;">
+            <option value="">كل الأشهر</option>
+            <option value="01">يناير</option><option value="02">فبراير</option>
+            <option value="03">مارس</option><option value="04">أبريل</option>
+            <option value="05">مايو</option><option value="06">يونيو</option>
+            <option value="07">يوليو</option><option value="08">أغسطس</option>
+            <option value="09">سبتمبر</option><option value="10">أكتوبر</option>
+            <option value="11">نوفمبر</option><option value="12">ديسمبر</option>
+          </select>
+          <button class="btn btn-primary" id="emp-btn-refresh">⟳ تحديث</button>
+        </div>
+        <div class="toolbar-right">
+          <button class="btn" id="emp-btn-add">+ موظف جديد</button>
+          <button class="btn" id="emp-btn-payroll">صرف المرتبات</button>
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <div class="table-scroll">
+          <table id="emp-table">
+            <thead>
+              <tr>
+                <th>اسم الموظف</th>
+                <th>الوظيفة</th>
+                <th>الراتب الأساسي</th>
+                <th>أيام الحضور</th>
+                <th>أيام الغياب</th>
+                <th>الإجازات</th>
+                <th>الخصومات</th>
+                <th>المكافآت</th>
+                <th>صافي المرتب</th>
+                <th>إجراءات</th>
+              </tr>
+            </thead>
+            <tbody id="emp-table-body">
+              <tr><td colspan="10"><div class="table-loading"><div class="spinner"></div>جارٍ التحميل...</div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= EXPENSES VIEW ================= -->
+    <section id="view-expenses" class="view">
+      <h1 class="page-title">المصاريف العمومية</h1>
+      <p class="page-sub">نثريات، إيجار، ضرائب، مصاريف تشغيل — تظهر تلقائياً في قائمة الدخل</p>
+
+      <div class="kpi-row">
+        <div class="kpi-card is-payable">
+          <div class="kpi-label">إجمالي المصاريف</div>
+          <div class="kpi-value" id="exp-kpi-total"><span class="cur">ج.م</span>0</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">نثريات</div>
+          <div class="kpi-value" id="exp-kpi-misc"><span class="cur">ج.م</span>0</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">إيجار</div>
+          <div class="kpi-value" id="exp-kpi-rent"><span class="cur">ج.م</span>0</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">ضرائب ومصاريف تشغيل</div>
+          <div class="kpi-value" id="exp-kpi-ops"><span class="cur">ج.م</span>0</div>
+        </div>
+      </div>
+
+      <div class="toolbar">
+        <div class="toolbar-left">
+          <select class="search-box" id="exp-filter-cat" style="min-width:160px;">
+            <option value="all">كل التصنيفات</option>
+            <option value="نثريات">نثريات</option>
+            <option value="إيجار">إيجار</option>
+            <option value="ضرائب">ضرائب</option>
+            <option value="مصاريف_تشغيل">مصاريف تشغيل</option>
+            <option value="أخرى">أخرى</option>
+          </select>
+          <input type="text" class="search-box" id="exp-search" placeholder="بحث في المصاريف...">
+          <button class="btn btn-primary" id="exp-btn-refresh">⟳ تحديث</button>
+        </div>
+        <div class="toolbar-right">
+          <button class="btn" id="exp-btn-add">+ مصروف جديد</button>
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <div class="table-scroll">
+          <table id="exp-table">
+            <thead>
+              <tr>
+                <th>التاريخ</th>
+                <th>البيان</th>
+                <th>التصنيف</th>
+                <th>المبلغ</th>
+                <th>طريقة الدفع</th>
+                <th>المسؤول</th>
+                <th>ملاحظات</th>
+                <th>إجراءات</th>
+              </tr>
+            </thead>
+            <tbody id="exp-table-body">
+              <tr><td colspan="8"><div class="table-loading"><div class="spinner"></div>جارٍ التحميل...</div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= REPORTS VIEW ================= -->
+    <section id="view-reports" class="view">
+      <h1 class="page-title">التقارير المالية</h1>
+      <p class="page-sub">قائمة الدخل، المركز المالي، تقرير المخزون، كشوف العملاء والموردين</p>
+
+      <div style="display:flex; gap:10px; margin-bottom:20px; flex-wrap:wrap;">
+        <button class="btn btn-primary" id="rep-btn-income">قائمة الدخل</button>
+        <button class="btn" id="rep-btn-balance">المركز المالي</button>
+        <button class="btn" id="rep-btn-inventory">تقرير المخزون</button>
+        <button class="btn" id="rep-btn-customers">كشف العملاء</button>
+        <button class="btn" id="rep-btn-suppliers">كشف الموردين</button>
+        <button class="btn btn-primary" id="rep-btn-refresh" style="margin-right:auto;">⟳ تحديث التقارير</button>
+      </div>
+
+      <!-- Income Statement -->
+      <div id="rep-income-section">
+        <h2 style="font-size:17px;font-weight:800;margin:0 0 14px 0;color:var(--text);">قائمة الدخل</h2>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:16px;">
+          <div class="kpi-card is-receivable">
+            <div class="kpi-label">إجمالي الإيرادات</div>
+            <div class="kpi-value" id="rep-revenue"><span class="cur">ج.م</span>0</div>
+          </div>
+          <div class="kpi-card is-payable">
+            <div class="kpi-label">إجمالي المصاريف والتكاليف</div>
+            <div class="kpi-value" id="rep-costs"><span class="cur">ج.م</span>0</div>
+          </div>
+          <div class="kpi-card is-receivable" style="grid-column:1/-1;">
+            <div class="kpi-label">صافي الربح / الخسارة</div>
+            <div class="kpi-value" id="rep-net"><span class="cur">ج.م</span>0</div>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <div class="table-scroll">
+            <table>
+              <thead>
+                <tr><th>البند</th><th>الفئة</th><th>المبلغ (ج.م)</th></tr>
+              </thead>
+              <tbody id="rep-income-body">
+                <tr><td colspan="3"><div class="table-loading"><div class="spinner"></div>جارٍ التحميل...</div></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Balance Sheet (hidden by default) -->
+      <div id="rep-balance-section" style="display:none;">
+        <h2 style="font-size:17px;font-weight:800;margin:0 0 14px 0;color:var(--text);">المركز المالي</h2>
+        <div class="table-wrap">
+          <div class="table-scroll">
+            <table>
+              <thead>
+                <tr><th>البند</th><th>الفئة</th><th>المبلغ (ج.م)</th></tr>
+              </thead>
+              <tbody id="rep-balance-body">
+                <tr><td colspan="3"><div class="table-loading"><div class="spinner"></div>جارٍ التحميل...</div></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Inventory Report (hidden by default) -->
+      <div id="rep-inventory-section" style="display:none;">
+        <h2 style="font-size:17px;font-weight:800;margin:0 0 14px 0;color:var(--text);">تقرير المخزون</h2>
+        <div class="table-wrap">
+          <div class="table-scroll">
+            <table>
+              <thead>
+                <tr><th>الصنف</th><th>النوع</th><th>الكمية</th><th>سعر الوحدة</th><th>القيمة الإجمالية</th></tr>
+              </thead>
+              <tbody id="rep-inventory-body">
+                <tr><td colspan="5"><div class="table-loading"><div class="spinner"></div>جارٍ التحميل...</div></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Customers Statement (hidden by default) -->
+      <div id="rep-customers-section" style="display:none;">
+        <h2 style="font-size:17px;font-weight:800;margin:0 0 14px 0;color:var(--text);">كشف حسابات العملاء</h2>
+        <div class="table-wrap">
+          <div class="table-scroll">
+            <table>
+              <thead>
+                <tr><th>اسم العميل</th><th>إجمالي الفواتير</th><th>المدفوعات</th><th>الرصيد المتبقي</th></tr>
+              </thead>
+              <tbody id="rep-customers-body">
+                <tr><td colspan="4"><div class="table-loading"><div class="spinner"></div>جارٍ التحميل...</div></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Suppliers Statement (hidden by default) -->
+      <div id="rep-suppliers-section" style="display:none;">
+        <h2 style="font-size:17px;font-weight:800;margin:0 0 14px 0;color:var(--text);">كشف حسابات الموردين</h2>
+        <div class="table-wrap">
+          <div class="table-scroll">
+            <table>
+              <thead>
+                <tr><th>اسم المورد</th><th>إجمالي الفواتير</th><th>المدفوعات</th><th>الرصيد المتبقي</th></tr>
+              </thead>
+              <tbody id="rep-suppliers-body">
+                <tr><td colspan="4"><div class="table-loading"><div class="spinner"></div>جارٍ التحميل...</div></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <!-- ================= SETTINGS VIEW ================= -->
     <section id="view-settings" class="view">
       <h1 class="page-title">الإعدادات</h1>
@@ -858,6 +1427,344 @@
     </section>
 
   </main>
+</div>
+
+<!-- ================= SALES ADD MODAL ================= -->
+<div class="modal-overlay" id="sales-add-modal">
+  <div class="modal" style="max-width:620px;">
+    <h2 class="modal-title">فاتورة مبيعات جديدة</h2>
+    <div class="modal-grid">
+      <div class="field">
+        <label>التاريخ</label>
+        <input type="date" id="sales-add-date">
+      </div>
+      <div class="field">
+        <label>نوع البيع</label>
+        <select id="sales-add-type">
+          <option value="منتج_تام">منتج تام</option>
+          <option value="داشت">داشت</option>
+          <option value="تشغيل_للغير">تشغيل للغير</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>اسم العميل</label>
+        <input type="text" id="sales-add-customer">
+      </div>
+      <div class="field">
+        <label>المنتج</label>
+        <input type="text" id="sales-add-product">
+      </div>
+      <div class="field">
+        <label>الكمية</label>
+        <input type="number" step="0.01" id="sales-add-qty">
+      </div>
+      <div class="field">
+        <label>وحدة القياس</label>
+        <input type="text" id="sales-add-unit" placeholder="طن / قطعة / متر">
+      </div>
+      <div class="field">
+        <label>السعر للوحدة (ج.م)</label>
+        <input type="number" step="0.01" id="sales-add-price">
+      </div>
+      <div class="field">
+        <label>الإجمالي (ج.م)</label>
+        <input type="number" step="0.01" id="sales-add-total" readonly style="opacity:.7;">
+      </div>
+      <div class="field span-2">
+        <label>ملاحظات</label>
+        <textarea id="sales-add-notes" rows="2"></textarea>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" id="sales-add-cancel">إلغاء</button>
+      <button class="btn btn-primary" id="sales-add-save">حفظ الفاتورة</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= PURCHASES ADD MODAL ================= -->
+<div class="modal-overlay" id="purch-add-modal">
+  <div class="modal" style="max-width:620px;">
+    <h2 class="modal-title">فاتورة مشتريات جديدة</h2>
+    <div class="modal-grid">
+      <div class="field">
+        <label>التاريخ</label>
+        <input type="date" id="purch-add-date">
+      </div>
+      <div class="field">
+        <label>اسم المورد</label>
+        <input type="text" id="purch-add-supplier">
+      </div>
+      <div class="field">
+        <label>الخامة</label>
+        <input type="text" id="purch-add-material">
+      </div>
+      <div class="field">
+        <label>وحدة القياس</label>
+        <input type="text" id="purch-add-unit" placeholder="طن / كجم / متر">
+      </div>
+      <div class="field">
+        <label>الكمية</label>
+        <input type="number" step="0.01" id="purch-add-qty">
+      </div>
+      <div class="field">
+        <label>السعر للوحدة (ج.م)</label>
+        <input type="number" step="0.01" id="purch-add-price">
+      </div>
+      <div class="field">
+        <label>الإجمالي (ج.م)</label>
+        <input type="number" step="0.01" id="purch-add-total" readonly style="opacity:.7;">
+      </div>
+      <div class="field">
+        <label>رقم الفاتورة</label>
+        <input type="text" id="purch-add-invoice-num">
+      </div>
+      <div class="field span-2">
+        <label>ملاحظات</label>
+        <textarea id="purch-add-notes" rows="2"></textarea>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" id="purch-add-cancel">إلغاء</button>
+      <button class="btn btn-primary" id="purch-add-save">حفظ الفاتورة</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= PRODUCTION ADD MODAL ================= -->
+<div class="modal-overlay" id="prod-add-modal">
+  <div class="modal" style="max-width:660px;">
+    <h2 class="modal-title">أمر إنتاج جديد</h2>
+    <div class="modal-grid">
+      <div class="field">
+        <label>التاريخ</label>
+        <input type="date" id="prod-add-date">
+      </div>
+      <div class="field">
+        <label>رقم الأمر</label>
+        <input type="text" id="prod-add-order-num" placeholder="تلقائي">
+      </div>
+      <div class="field">
+        <label>المنتج</label>
+        <input type="text" id="prod-add-product">
+      </div>
+      <div class="field">
+        <label>الكمية المنتجة</label>
+        <input type="number" step="0.01" id="prod-add-qty">
+      </div>
+    </div>
+    <div style="margin:14px 0 8px 0; font-size:13.5px; font-weight:700; color:var(--text-dim);">الخامات المستخدمة</div>
+    <div id="prod-materials-list">
+      <div class="prod-material-row" style="display:grid; grid-template-columns:1fr 120px 100px 32px; gap:8px; margin-bottom:8px;">
+        <input type="text" class="field input" placeholder="اسم الخامة" style="background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:var(--radius-sm);padding:9px 10px;font-size:14px;outline:none;">
+        <input type="number" class="field input" placeholder="الكمية" style="background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:var(--radius-sm);padding:9px 10px;font-size:14px;outline:none;">
+        <input type="text" class="field input" placeholder="الوحدة" style="background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:var(--radius-sm);padding:9px 10px;font-size:14px;outline:none;">
+        <button class="btn" onclick="this.closest('.prod-material-row').remove()" style="padding:8px;">✕</button>
+      </div>
+    </div>
+    <button class="btn btn-ghost" id="prod-add-material-row" style="margin-bottom:14px; font-size:13px;">+ إضافة خامة</button>
+    <div class="modal-grid">
+      <div class="field span-2">
+        <label>ملاحظات</label>
+        <textarea id="prod-add-notes" rows="2"></textarea>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" id="prod-add-cancel">إلغاء</button>
+      <button class="btn btn-primary" id="prod-add-save">تأكيد أمر الإنتاج</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= INVENTORY ADD MODAL ================= -->
+<div class="modal-overlay" id="inv-add-modal">
+  <div class="modal" style="max-width:540px;">
+    <h2 class="modal-title">تعديل / إضافة صنف مخزون</h2>
+    <div class="modal-grid">
+      <div class="field">
+        <label>الصنف</label>
+        <input type="text" id="inv-add-item">
+      </div>
+      <div class="field">
+        <label>نوع المخزن</label>
+        <select id="inv-add-type">
+          <option value="خام">مواد خام</option>
+          <option value="تام">منتج تام</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>وحدة القياس</label>
+        <input type="text" id="inv-add-unit" placeholder="طن / قطعة...">
+      </div>
+      <div class="field">
+        <label>الكمية الحالية</label>
+        <input type="number" step="0.01" id="inv-add-qty">
+      </div>
+      <div class="field">
+        <label>الحد الأدنى المسموح به</label>
+        <input type="number" step="0.01" id="inv-add-min">
+      </div>
+      <div class="field">
+        <label>سعر الوحدة (ج.م)</label>
+        <input type="number" step="0.01" id="inv-add-price">
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" id="inv-add-cancel">إلغاء</button>
+      <button class="btn btn-primary" id="inv-add-save">حفظ</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= ACCOUNT ADD MODAL ================= -->
+<div class="modal-overlay" id="acc-add-modal">
+  <div class="modal" style="max-width:540px;">
+    <h2 class="modal-title">عميل / مورد جديد</h2>
+    <div class="modal-grid">
+      <div class="field">
+        <label>الاسم</label>
+        <input type="text" id="acc-add-name">
+      </div>
+      <div class="field">
+        <label>النوع</label>
+        <select id="acc-add-type">
+          <option value="عميل">عميل</option>
+          <option value="مورد">مورد</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>الهاتف</label>
+        <input type="text" id="acc-add-phone">
+      </div>
+      <div class="field">
+        <label>العنوان</label>
+        <input type="text" id="acc-add-address">
+      </div>
+      <div class="field span-2">
+        <label>ملاحظات</label>
+        <textarea id="acc-add-notes" rows="2"></textarea>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" id="acc-add-cancel">إلغاء</button>
+      <button class="btn btn-primary" id="acc-add-save">حفظ</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= ACCOUNT STATEMENT MODAL ================= -->
+<div class="modal-overlay" id="acc-statement-modal">
+  <div class="modal" style="max-width:700px; max-height:90vh;">
+    <h2 class="modal-title" id="acc-statement-title">كشف حساب</h2>
+    <div class="kpi-row" style="grid-template-columns:repeat(3,1fr); margin-bottom:14px;">
+      <div class="kpi-card"><div class="kpi-label">إجمالي الفواتير</div><div class="kpi-value" id="stmt-total"><span class="cur">ج.م</span>0</div></div>
+      <div class="kpi-card"><div class="kpi-label">المدفوعات</div><div class="kpi-value" id="stmt-paid"><span class="cur">ج.م</span>0</div></div>
+      <div class="kpi-card is-payable"><div class="kpi-label">الرصيد المتبقي</div><div class="kpi-value" id="stmt-balance"><span class="cur">ج.م</span>0</div></div>
+    </div>
+    <div class="table-wrap" style="max-height:320px; overflow-y:auto;">
+      <table>
+        <thead><tr><th>التاريخ</th><th>البيان</th><th>مدين</th><th>دائن</th><th>الرصيد</th></tr></thead>
+        <tbody id="acc-statement-body">
+          <tr><td colspan="5"><div class="table-loading"><div class="spinner"></div>جارٍ التحميل...</div></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" id="acc-statement-close">إغلاق</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= EMPLOYEE ADD MODAL ================= -->
+<div class="modal-overlay" id="emp-add-modal">
+  <div class="modal" style="max-width:620px;">
+    <h2 class="modal-title">موظف جديد</h2>
+    <div class="modal-grid">
+      <div class="field">
+        <label>اسم الموظف</label>
+        <input type="text" id="emp-add-name">
+      </div>
+      <div class="field">
+        <label>الوظيفة</label>
+        <input type="text" id="emp-add-job">
+      </div>
+      <div class="field">
+        <label>الراتب الأساسي (ج.م)</label>
+        <input type="number" step="0.01" id="emp-add-base">
+      </div>
+      <div class="field">
+        <label>الهاتف</label>
+        <input type="text" id="emp-add-phone">
+      </div>
+      <div class="field">
+        <label>تاريخ التعيين</label>
+        <input type="date" id="emp-add-hire-date">
+      </div>
+      <div class="field">
+        <label>أيام العمل في الشهر</label>
+        <input type="number" id="emp-add-work-days" value="26">
+      </div>
+      <div class="field span-2">
+        <label>ملاحظات</label>
+        <textarea id="emp-add-notes" rows="2"></textarea>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" id="emp-add-cancel">إلغاء</button>
+      <button class="btn btn-primary" id="emp-add-save">حفظ</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= EXPENSE ADD MODAL ================= -->
+<div class="modal-overlay" id="exp-add-modal">
+  <div class="modal" style="max-width:560px;">
+    <h2 class="modal-title">مصروف جديد</h2>
+    <div class="modal-grid">
+      <div class="field">
+        <label>التاريخ</label>
+        <input type="date" id="exp-add-date">
+      </div>
+      <div class="field">
+        <label>التصنيف</label>
+        <select id="exp-add-category">
+          <option value="نثريات">نثريات</option>
+          <option value="إيجار">إيجار</option>
+          <option value="ضرائب">ضرائب</option>
+          <option value="مصاريف_تشغيل">مصاريف تشغيل</option>
+          <option value="أخرى">أخرى</option>
+        </select>
+      </div>
+      <div class="field span-2">
+        <label>البيان</label>
+        <input type="text" id="exp-add-desc">
+      </div>
+      <div class="field">
+        <label>المبلغ (ج.م)</label>
+        <input type="number" step="0.01" id="exp-add-amount">
+      </div>
+      <div class="field">
+        <label>طريقة الدفع</label>
+        <select id="exp-add-payment">
+          <option value="نقدي">نقدي</option>
+          <option value="تحويل">تحويل بنكي</option>
+          <option value="شيك">شيك</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>المسؤول</label>
+        <input type="text" id="exp-add-responsible">
+      </div>
+      <div class="field span-2">
+        <label>ملاحظات</label>
+        <textarea id="exp-add-notes" rows="2"></textarea>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" id="exp-add-cancel">إلغاء</button>
+      <button class="btn btn-primary" id="exp-add-save">حفظ المصروف</button>
+    </div>
+  </div>
 </div>
 
 <!-- ================= EDIT MODAL ================= -->
@@ -1613,6 +2520,860 @@
   }
 
   init();
+
+})();
+</script>
+
+<script>
+(function(){
+"use strict";
+
+/* ============================================================
+   SHARED UTILITIES FOR NEW PAGES
+   ============================================================ */
+function getWebhookUrl(){
+  try {
+    var raw = localStorage.getItem("invoiceDashboardSettings");
+    if (!raw) return "";
+    var s = JSON.parse(raw);
+    return (s.activeEnv === "prod" ? s.prodUrl : s.trialUrl) || "";
+  } catch(e){ return ""; }
+}
+
+function fmtMoney(n){
+  var num = parseFloat(n) || 0;
+  return num.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
+}
+
+function escHtml(s){
+  var d = document.createElement('div');
+  d.textContent = s == null ? "" : String(s);
+  return d.innerHTML;
+}
+
+function showModal(id){ document.getElementById(id).classList.add('active'); }
+function hideModal(id){ document.getElementById(id).classList.remove('active'); }
+
+function webhookPost(payload, btnEl, successCb){
+  var url = getWebhookUrl();
+  if (!url){ alert('الرجاء إعداد رابط Webhook أولاً من صفحة الإعدادات.'); return; }
+  var origText = btnEl ? btnEl.textContent : '';
+  if (btnEl){ btnEl.disabled = true; btnEl.textContent = 'جارٍ الحفظ...'; }
+  fetch(url, {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify(payload)
+  }).then(function(r){ return r.json(); })
+  .then(function(data){
+    if (btnEl){ btnEl.disabled = false; btnEl.textContent = origText; }
+    if (successCb) successCb(data);
+  }).catch(function(){
+    if (btnEl){ btnEl.disabled = false; btnEl.textContent = origText; }
+    alert('تعذّر الاتصال بالـ Webhook. تحقق من الإعدادات أو الإنترنت.');
+  });
+}
+
+function webhookGet(type, setLoadingFn, doneCb){
+  var url = getWebhookUrl();
+  if (!url){
+    if (setLoadingFn) setLoadingFn('<div class="table-empty">لم يتم إعداد رابط Webhook بعد. الرجاء الذهاب إلى الإعدادات.</div>');
+    return;
+  }
+  if (setLoadingFn) setLoadingFn('<div class="table-loading"><div class="spinner"></div>جارٍ التحميل...</div>');
+  fetch(url, {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({type: type, action:'get', timestamp: new Date().toISOString()})
+  }).then(function(r){ return r.json(); })
+  .then(function(data){ if(doneCb) doneCb(data); })
+  .catch(function(){
+    if(setLoadingFn) setLoadingFn('<div class="table-error">تعذّر تحميل البيانات. حاول مرة أخرى.</div>');
+  });
+}
+
+/* Close modals on overlay click */
+['sales-add-modal','purch-add-modal','prod-add-modal','inv-add-modal',
+ 'acc-add-modal','acc-statement-modal','emp-add-modal','exp-add-modal'].forEach(function(id){
+  var el = document.getElementById(id);
+  if(el) el.addEventListener('click', function(e){ if(e.target === this) hideModal(id); });
+});
+
+/* ============================================================
+   NAVIGATION — wire all new nav items + trigger data load
+   ============================================================ */
+var pageLoadedFlags = {};
+document.querySelectorAll('.nav-item[data-view]').forEach(function(item){
+  item.addEventListener('click', function(){
+    var view = item.getAttribute('data-view');
+    if (!pageLoadedFlags[view]) {
+      pageLoadedFlags[view] = true;
+      triggerPageLoad(view);
+    }
+  });
+});
+
+function triggerPageLoad(view){
+  switch(view){
+    case 'sales': loadSalesData(); break;
+    case 'purchases': loadPurchasesData(); break;
+    case 'production': loadProductionData(); break;
+    case 'inventory': loadInventoryData(); break;
+    case 'accounts': loadAccountsData(); break;
+    case 'employees': loadEmployeesData(); break;
+    case 'expenses': loadExpensesData(); break;
+    case 'reports': loadReportsData('income'); break;
+  }
+}
+
+/* ============================================================
+   SALES PAGE
+   ============================================================ */
+var salesData = [];
+
+function loadSalesData(){
+  webhookGet('مبيعات', function(msg){
+    var colspan = 9;
+    document.getElementById('sales-table-body').innerHTML = '<tr><td colspan="'+colspan+'">'+msg+'</td></tr>';
+  }, function(data){
+    salesData = Array.isArray(data) ? data : (Array.isArray(data.data) ? data.data : []);
+    renderSalesTable();
+  });
+}
+
+function renderSalesTable(){
+  var search = (document.getElementById('sales-search').value || '').toLowerCase();
+  var typeF = document.getElementById('sales-filter-type').value;
+  var filtered = salesData.filter(function(r){
+    var matchType = typeF === 'all' || r.sale_type === typeF;
+    var matchSearch = !search || (r.customer||'').toLowerCase().includes(search) || (r.product||'').toLowerCase().includes(search);
+    return matchType && matchSearch;
+  });
+
+  var totals = {all:0, منتج_تام:0, داشت:0, تشغيل_للغير:0};
+  salesData.forEach(function(r){
+    var v = parseFloat(r.total)||0;
+    totals.all += v;
+    if(totals[r.sale_type] !== undefined) totals[r.sale_type] += v;
+  });
+  document.getElementById('sales-kpi-total').innerHTML = '<span class="cur">ج.م</span>' + fmtMoney(totals.all);
+  document.getElementById('sales-kpi-finished').innerHTML = '<span class="cur">ج.م</span>' + fmtMoney(totals['منتج_تام']);
+  document.getElementById('sales-kpi-dasht').innerHTML = '<span class="cur">ج.م</span>' + fmtMoney(totals['داشت']);
+  document.getElementById('sales-kpi-external').innerHTML = '<span class="cur">ج.م</span>' + fmtMoney(totals['تشغيل_للغير']);
+
+  var tbody = document.getElementById('sales-table-body');
+  if(!filtered.length){
+    tbody.innerHTML = '<tr><td colspan="9"><div class="table-empty">لا توجد بيانات مبيعات</div></td></tr>';
+    return;
+  }
+  tbody.innerHTML = filtered.map(function(r){
+    var typeLabel = {منتج_تام:'منتج تام', داشت:'داشت', تشغيل_للغير:'تشغيل للغير'}[r.sale_type] || r.sale_type;
+    return '<tr>'+
+      '<td>'+escHtml(r.date||'—')+'</td>'+
+      '<td>'+escHtml(r.customer||'—')+'</td>'+
+      '<td><span class="badge receivable">'+escHtml(typeLabel)+'</span></td>'+
+      '<td>'+escHtml(r.product||'—')+'</td>'+
+      '<td>'+escHtml(r.qty||'0')+' '+escHtml(r.unit||'')+'</td>'+
+      '<td>'+fmtMoney(r.price)+'</td>'+
+      '<td><strong>'+fmtMoney(r.total)+'</strong></td>'+
+      '<td><span class="badge '+(r.status==='مدفوع'?'review-no':'payable')+'">'+escHtml(r.status||'معلّق')+'</span></td>'+
+      '<td><button class="icon-btn btn-sm" onclick="">تفاصيل</button></td>'+
+    '</tr>';
+  }).join('');
+}
+
+document.getElementById('sales-btn-refresh').addEventListener('click', function(){
+  pageLoadedFlags['sales'] = true;
+  loadSalesData();
+});
+document.getElementById('sales-search').addEventListener('input', renderSalesTable);
+document.getElementById('sales-filter-type').addEventListener('change', renderSalesTable);
+
+/* Sales modal */
+document.getElementById('sales-btn-add').addEventListener('click', function(){
+  document.getElementById('sales-add-date').value = new Date().toISOString().split('T')[0];
+  showModal('sales-add-modal');
+});
+document.getElementById('sales-add-cancel').addEventListener('click', function(){ hideModal('sales-add-modal'); });
+
+['sales-add-qty','sales-add-price'].forEach(function(id){
+  document.getElementById(id).addEventListener('input', function(){
+    var qty = parseFloat(document.getElementById('sales-add-qty').value)||0;
+    var price = parseFloat(document.getElementById('sales-add-price').value)||0;
+    document.getElementById('sales-add-total').value = (qty*price).toFixed(2);
+  });
+});
+
+document.getElementById('sales-add-save').addEventListener('click', function(){
+  var btn = this;
+  var payload = {
+    type:'مبيعات',
+    action:'add',
+    date: document.getElementById('sales-add-date').value,
+    sale_type: document.getElementById('sales-add-type').value,
+    customer: document.getElementById('sales-add-customer').value.trim(),
+    product: document.getElementById('sales-add-product').value.trim(),
+    qty: parseFloat(document.getElementById('sales-add-qty').value)||0,
+    unit: document.getElementById('sales-add-unit').value.trim(),
+    price: parseFloat(document.getElementById('sales-add-price').value)||0,
+    total: parseFloat(document.getElementById('sales-add-total').value)||0,
+    notes: document.getElementById('sales-add-notes').value.trim()
+  };
+  webhookPost(payload, btn, function(){
+    hideModal('sales-add-modal');
+    loadSalesData();
+  });
+});
+
+/* ============================================================
+   PURCHASES PAGE
+   ============================================================ */
+var purchData = [];
+
+function loadPurchasesData(){
+  webhookGet('مشتريات', function(msg){
+    document.getElementById('purch-table-body').innerHTML = '<tr><td colspan="9">'+msg+'</td></tr>';
+  }, function(data){
+    purchData = Array.isArray(data) ? data : (Array.isArray(data.data) ? data.data : []);
+    renderPurchTable();
+  });
+}
+
+function renderPurchTable(){
+  var search = (document.getElementById('purch-search').value||'').toLowerCase();
+  var filtered = purchData.filter(function(r){
+    return !search || (r.supplier||'').toLowerCase().includes(search) || (r.material||'').toLowerCase().includes(search);
+  });
+
+  var totalAmt = 0, suppliers = new Set(), thisMonth = 0;
+  var now = new Date(), ym = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
+  purchData.forEach(function(r){
+    var v = parseFloat(r.total)||0;
+    totalAmt += v;
+    if(r.supplier) suppliers.add(r.supplier);
+    if(r.date && r.date.startsWith(ym)) thisMonth += v;
+  });
+  document.getElementById('purch-kpi-total').innerHTML = '<span class="cur">ج.م</span>'+fmtMoney(totalAmt);
+  document.getElementById('purch-kpi-count').textContent = purchData.length;
+  document.getElementById('purch-kpi-suppliers').textContent = suppliers.size;
+  document.getElementById('purch-kpi-month').innerHTML = '<span class="cur">ج.م</span>'+fmtMoney(thisMonth);
+
+  var tbody = document.getElementById('purch-table-body');
+  if(!filtered.length){
+    tbody.innerHTML = '<tr><td colspan="9"><div class="table-empty">لا توجد بيانات مشتريات</div></td></tr>';
+    return;
+  }
+  tbody.innerHTML = filtered.map(function(r){
+    return '<tr>'+
+      '<td>'+escHtml(r.date||'—')+'</td>'+
+      '<td>'+escHtml(r.supplier||'—')+'</td>'+
+      '<td>'+escHtml(r.material||'—')+'</td>'+
+      '<td>'+escHtml(r.qty||'0')+'</td>'+
+      '<td>'+escHtml(r.unit||'—')+'</td>'+
+      '<td>'+fmtMoney(r.price)+'</td>'+
+      '<td><strong>'+fmtMoney(r.total)+'</strong></td>'+
+      '<td><span class="badge '+(r.status==='مدفوع'?'review-no':'payable')+'">'+escHtml(r.status||'معلّق')+'</span></td>'+
+      '<td><button class="icon-btn btn-sm">تفاصيل</button></td>'+
+    '</tr>';
+  }).join('');
+}
+
+document.getElementById('purch-btn-refresh').addEventListener('click', function(){ loadPurchasesData(); });
+document.getElementById('purch-search').addEventListener('input', renderPurchTable);
+
+document.getElementById('purch-btn-add').addEventListener('click', function(){
+  document.getElementById('purch-add-date').value = new Date().toISOString().split('T')[0];
+  showModal('purch-add-modal');
+});
+document.getElementById('purch-add-cancel').addEventListener('click', function(){ hideModal('purch-add-modal'); });
+
+['purch-add-qty','purch-add-price'].forEach(function(id){
+  document.getElementById(id).addEventListener('input', function(){
+    var qty = parseFloat(document.getElementById('purch-add-qty').value)||0;
+    var price = parseFloat(document.getElementById('purch-add-price').value)||0;
+    document.getElementById('purch-add-total').value = (qty*price).toFixed(2);
+  });
+});
+
+document.getElementById('purch-add-save').addEventListener('click', function(){
+  var btn = this;
+  var payload = {
+    type:'مشتريات',
+    action:'add',
+    date: document.getElementById('purch-add-date').value,
+    supplier: document.getElementById('purch-add-supplier').value.trim(),
+    material: document.getElementById('purch-add-material').value.trim(),
+    unit: document.getElementById('purch-add-unit').value.trim(),
+    qty: parseFloat(document.getElementById('purch-add-qty').value)||0,
+    price: parseFloat(document.getElementById('purch-add-price').value)||0,
+    total: parseFloat(document.getElementById('purch-add-total').value)||0,
+    invoice_number: document.getElementById('purch-add-invoice-num').value.trim(),
+    notes: document.getElementById('purch-add-notes').value.trim()
+  };
+  webhookPost(payload, btn, function(){
+    hideModal('purch-add-modal');
+    loadPurchasesData();
+  });
+});
+
+/* ============================================================
+   PRODUCTION PAGE
+   ============================================================ */
+var prodData = [];
+
+function loadProductionData(){
+  webhookGet('امر_انتاج', function(msg){
+    document.getElementById('prod-table-body').innerHTML = '<tr><td colspan="9">'+msg+'</td></tr>';
+  }, function(data){
+    prodData = Array.isArray(data) ? data : (Array.isArray(data.data) ? data.data : []);
+    renderProdTable();
+  });
+}
+
+function renderProdTable(){
+  var search = (document.getElementById('prod-search').value||'').toLowerCase();
+  var statusF = document.getElementById('prod-filter-status').value;
+  var filtered = prodData.filter(function(r){
+    var matchStatus = statusF==='all' || r.status===statusF;
+    var matchSearch = !search || (r.product||'').toLowerCase().includes(search) || (r.order_num||'').toLowerCase().includes(search);
+    return matchStatus && matchSearch;
+  });
+
+  var total=prodData.length, done=0, inprog=0, totalCost=0;
+  prodData.forEach(function(r){
+    if(r.status==='مكتمل') done++;
+    else if(r.status==='قيد_التنفيذ') inprog++;
+    totalCost += parseFloat(r.total_cost)||0;
+  });
+  document.getElementById('prod-kpi-total').textContent = total;
+  document.getElementById('prod-kpi-done').textContent = done;
+  document.getElementById('prod-kpi-inprogress').textContent = inprog;
+  document.getElementById('prod-kpi-cost').innerHTML = '<span class="cur">ج.م</span>'+fmtMoney(totalCost);
+
+  var tbody = document.getElementById('prod-table-body');
+  if(!filtered.length){
+    tbody.innerHTML = '<tr><td colspan="9"><div class="table-empty">لا توجد أوامر إنتاج</div></td></tr>';
+    return;
+  }
+  tbody.innerHTML = filtered.map(function(r){
+    var statusClass = r.status==='مكتمل'?'review-no':(r.status==='ملغي'?'review-yes':'payable');
+    var materials = Array.isArray(r.materials) ? r.materials.map(function(m){ return escHtml(m.name||m)+' ('+escHtml(m.qty||'')+')'; }).join('، ') : escHtml(r.materials||'—');
+    return '<tr>'+
+      '<td>'+escHtml(r.order_num||'—')+'</td>'+
+      '<td>'+escHtml(r.date||'—')+'</td>'+
+      '<td>'+escHtml(r.product||'—')+'</td>'+
+      '<td>'+escHtml(r.qty||'0')+' '+escHtml(r.unit||'')+'</td>'+
+      '<td style="max-width:200px;white-space:normal;font-size:12.5px;color:var(--text-dim);">'+materials+'</td>'+
+      '<td>'+fmtMoney(r.unit_cost)+'</td>'+
+      '<td><strong>'+fmtMoney(r.total_cost)+'</strong></td>'+
+      '<td><span class="badge '+statusClass+'">'+escHtml(r.status||'—')+'</span></td>'+
+      '<td><button class="icon-btn btn-sm">تفاصيل</button></td>'+
+    '</tr>';
+  }).join('');
+}
+
+document.getElementById('prod-btn-refresh').addEventListener('click', function(){ loadProductionData(); });
+document.getElementById('prod-search').addEventListener('input', renderProdTable);
+document.getElementById('prod-filter-status').addEventListener('change', renderProdTable);
+
+/* Add material row */
+document.getElementById('prod-add-material-row').addEventListener('click', function(){
+  var div = document.createElement('div');
+  div.className = 'prod-material-row';
+  div.style.cssText = 'display:grid;grid-template-columns:1fr 120px 100px 32px;gap:8px;margin-bottom:8px;';
+  div.innerHTML = '<input type="text" placeholder="اسم الخامة" style="background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:var(--radius-sm);padding:9px 10px;font-size:14px;outline:none;">'+
+    '<input type="number" placeholder="الكمية" style="background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:var(--radius-sm);padding:9px 10px;font-size:14px;outline:none;">'+
+    '<input type="text" placeholder="الوحدة" style="background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:var(--radius-sm);padding:9px 10px;font-size:14px;outline:none;">'+
+    '<button class="btn" onclick="this.closest(\'.prod-material-row\').remove()" style="padding:8px;">✕</button>';
+  document.getElementById('prod-materials-list').appendChild(div);
+});
+
+document.getElementById('prod-btn-add').addEventListener('click', function(){
+  document.getElementById('prod-add-date').value = new Date().toISOString().split('T')[0];
+  showModal('prod-add-modal');
+});
+document.getElementById('prod-add-cancel').addEventListener('click', function(){ hideModal('prod-add-modal'); });
+
+document.getElementById('prod-add-save').addEventListener('click', function(){
+  var btn = this;
+  var rows = document.querySelectorAll('#prod-materials-list .prod-material-row');
+  var materials = [];
+  rows.forEach(function(row){
+    var inputs = row.querySelectorAll('input');
+    if(inputs[0] && inputs[0].value.trim()){
+      materials.push({name: inputs[0].value.trim(), qty: parseFloat(inputs[1].value)||0, unit: inputs[2].value.trim()});
+    }
+  });
+  var payload = {
+    type:'امر_انتاج',
+    action:'add',
+    date: document.getElementById('prod-add-date').value,
+    order_num: document.getElementById('prod-add-order-num').value.trim(),
+    product: document.getElementById('prod-add-product').value.trim(),
+    qty: parseFloat(document.getElementById('prod-add-qty').value)||0,
+    materials: materials,
+    notes: document.getElementById('prod-add-notes').value.trim()
+  };
+  webhookPost(payload, btn, function(){
+    hideModal('prod-add-modal');
+    loadProductionData();
+  });
+});
+
+/* ============================================================
+   INVENTORY PAGE
+   ============================================================ */
+var invData = [];
+
+function loadInventoryData(){
+  webhookGet('مخزون', function(msg){
+    document.getElementById('inv-table-body').innerHTML = '<tr><td colspan="9">'+msg+'</td></tr>';
+  }, function(data){
+    invData = Array.isArray(data) ? data : (Array.isArray(data.data) ? data.data : []);
+    renderInvTable();
+  });
+}
+
+function renderInvTable(){
+  var search = (document.getElementById('inv-search').value||'').toLowerCase();
+  var typeF = document.getElementById('inv-filter-type').value;
+  var filtered = invData.filter(function(r){
+    var matchType = typeF==='all' || r.store_type===typeF;
+    var matchSearch = !search || (r.item||'').toLowerCase().includes(search);
+    return matchType && matchSearch;
+  });
+
+  var rawItems=0, finItems=0, lowItems=0, totalVal=0;
+  var alerts = [];
+  invData.forEach(function(r){
+    var qty = parseFloat(r.qty)||0, min = parseFloat(r.min_qty)||0, price = parseFloat(r.unit_price)||0;
+    totalVal += qty*price;
+    if(r.store_type==='خام') rawItems++;
+    else finItems++;
+    if(qty <= min){ lowItems++; alerts.push(r.item); }
+  });
+  document.getElementById('inv-kpi-raw-items').textContent = rawItems;
+  document.getElementById('inv-kpi-low').textContent = lowItems;
+  document.getElementById('inv-kpi-finished-items').textContent = finItems;
+  document.getElementById('inv-kpi-value').innerHTML = '<span class="cur">ج.م</span>'+fmtMoney(totalVal);
+
+  var alertEl = document.getElementById('inv-alerts');
+  if(alerts.length){
+    alertEl.innerHTML = '<div style="background:var(--review-bg);border:1px solid var(--review);border-radius:var(--radius-sm);padding:12px 16px;color:var(--review);font-size:13.5px;font-weight:600;">⚠️ تنبيه: الأصناف التالية وصلت للحد الأدنى: '+alerts.map(escHtml).join('، ')+'</div>';
+  } else {
+    alertEl.innerHTML = '';
+  }
+
+  var tbody = document.getElementById('inv-table-body');
+  if(!filtered.length){
+    tbody.innerHTML = '<tr><td colspan="9"><div class="table-empty">لا توجد بيانات مخزون</div></td></tr>';
+    return;
+  }
+  tbody.innerHTML = filtered.map(function(r){
+    var qty = parseFloat(r.qty)||0, min = parseFloat(r.min_qty)||0, price = parseFloat(r.unit_price)||0;
+    var isLow = qty <= min;
+    var statusBadge = isLow
+      ? '<span class="badge review-yes">تحت الحد</span>'
+      : '<span class="badge review-no">طبيعي</span>';
+    var typeLabel = r.store_type==='خام'?'مواد خام':'منتج تام';
+    return '<tr>'+
+      '<td><strong>'+escHtml(r.item||'—')+'</strong></td>'+
+      '<td>'+typeLabel+'</td>'+
+      '<td>'+escHtml(r.unit||'—')+'</td>'+
+      '<td style="color:'+(isLow?'var(--review)':'var(--text)')+'"><strong>'+fmtMoney(qty)+'</strong></td>'+
+      '<td style="color:var(--text-dim)">'+fmtMoney(min)+'</td>'+
+      '<td>'+statusBadge+'</td>'+
+      '<td>'+fmtMoney(price)+'</td>'+
+      '<td><strong>'+fmtMoney(qty*price)+'</strong></td>'+
+      '<td><button class="icon-btn btn-sm">تعديل</button></td>'+
+    '</tr>';
+  }).join('');
+}
+
+document.getElementById('inv-btn-refresh').addEventListener('click', function(){ loadInventoryData(); });
+document.getElementById('inv-search').addEventListener('input', renderInvTable);
+document.getElementById('inv-filter-type').addEventListener('change', renderInvTable);
+
+document.getElementById('inv-btn-add').addEventListener('click', function(){ showModal('inv-add-modal'); });
+document.getElementById('inv-add-cancel').addEventListener('click', function(){ hideModal('inv-add-modal'); });
+
+document.getElementById('inv-add-save').addEventListener('click', function(){
+  var btn = this;
+  var payload = {
+    type:'مخزون',
+    action:'add',
+    item: document.getElementById('inv-add-item').value.trim(),
+    store_type: document.getElementById('inv-add-type').value,
+    unit: document.getElementById('inv-add-unit').value.trim(),
+    qty: parseFloat(document.getElementById('inv-add-qty').value)||0,
+    min_qty: parseFloat(document.getElementById('inv-add-min').value)||0,
+    unit_price: parseFloat(document.getElementById('inv-add-price').value)||0
+  };
+  webhookPost(payload, btn, function(){
+    hideModal('inv-add-modal');
+    loadInventoryData();
+  });
+});
+
+/* ============================================================
+   ACCOUNTS PAGE
+   ============================================================ */
+var accData = [];
+
+function loadAccountsData(){
+  webhookGet('موردين', function(msg){
+    document.getElementById('acc-table-body').innerHTML = '<tr><td colspan="8">'+msg+'</td></tr>';
+  }, function(data){
+    accData = Array.isArray(data) ? data : (Array.isArray(data.data) ? data.data : []);
+    renderAccTable();
+  });
+}
+
+function renderAccTable(){
+  var search = (document.getElementById('acc-search').value||'').toLowerCase();
+  var typeF = document.getElementById('acc-filter-type').value;
+  var filtered = accData.filter(function(r){
+    var matchType = typeF==='all' || r.account_type===typeF;
+    var matchSearch = !search || (r.name||'').toLowerCase().includes(search);
+    return matchType && matchSearch;
+  });
+
+  var totalRec=0, totalPay=0, custCount=0, suppCount=0;
+  accData.forEach(function(r){
+    var bal = parseFloat(r.balance)||0;
+    if(r.account_type==='عميل'){ custCount++; totalRec+=bal; }
+    else { suppCount++; totalPay+=bal; }
+  });
+  document.getElementById('acc-kpi-receivable').innerHTML = '<span class="cur">ج.م</span>'+fmtMoney(totalRec);
+  document.getElementById('acc-kpi-payable').innerHTML = '<span class="cur">ج.م</span>'+fmtMoney(totalPay);
+  document.getElementById('acc-kpi-customers').textContent = custCount;
+  document.getElementById('acc-kpi-suppliers').textContent = suppCount;
+
+  var tbody = document.getElementById('acc-table-body');
+  if(!filtered.length){
+    tbody.innerHTML = '<tr><td colspan="8"><div class="table-empty">لا توجد بيانات عملاء أو موردين</div></td></tr>';
+    return;
+  }
+  tbody.innerHTML = filtered.map(function(r){
+    var typeClass = r.account_type==='عميل'?'receivable':'payable';
+    return '<tr>'+
+      '<td><strong>'+escHtml(r.name||'—')+'</strong></td>'+
+      '<td><span class="badge '+typeClass+'">'+escHtml(r.account_type||'—')+'</span></td>'+
+      '<td>'+escHtml(r.phone||'—')+'</td>'+
+      '<td>'+fmtMoney(r.total_invoices)+'</td>'+
+      '<td>'+fmtMoney(r.total_paid)+'</td>'+
+      '<td><strong style="color:var(--accent)">'+fmtMoney(r.balance)+'</strong></td>'+
+      '<td style="color:var(--text-dim)">'+escHtml(r.last_transaction||'—')+'</td>'+
+      '<td><button class="icon-btn btn-sm" onclick="openAccStatement(\''+escHtml(r.name)+'\')">كشف الحساب</button></td>'+
+    '</tr>';
+  }).join('');
+}
+
+window.openAccStatement = function(name){
+  document.getElementById('acc-statement-title').textContent = 'كشف حساب: ' + name;
+  document.getElementById('acc-statement-body').innerHTML = '<tr><td colspan="5"><div class="table-loading"><div class="spinner"></div>جارٍ التحميل...</div></td></tr>';
+  showModal('acc-statement-modal');
+  webhookGet('كشف_حساب', null, function(data){
+    var rows = Array.isArray(data) ? data : (Array.isArray(data.data) ? data.data : []);
+    var filtered = rows.filter(function(r){ return r.name===name; });
+    if(!filtered.length){
+      document.getElementById('acc-statement-body').innerHTML = '<tr><td colspan="5"><div class="table-empty">لا توجد حركات</div></td></tr>';
+      return;
+    }
+    var totalDebit=0, totalCredit=0;
+    var html = filtered.map(function(r){
+      totalDebit += parseFloat(r.debit)||0;
+      totalCredit += parseFloat(r.credit)||0;
+      return '<tr><td>'+escHtml(r.date||'—')+'</td><td>'+escHtml(r.desc||'—')+'</td><td>'+fmtMoney(r.debit)+'</td><td>'+fmtMoney(r.credit)+'</td><td><strong>'+fmtMoney(r.balance)+'</strong></td></tr>';
+    }).join('');
+    document.getElementById('acc-statement-body').innerHTML = html;
+    document.getElementById('stmt-total').innerHTML = '<span class="cur">ج.م</span>'+fmtMoney(totalDebit);
+    document.getElementById('stmt-paid').innerHTML = '<span class="cur">ج.م</span>'+fmtMoney(totalCredit);
+    document.getElementById('stmt-balance').innerHTML = '<span class="cur">ج.م</span>'+fmtMoney(totalDebit-totalCredit);
+  });
+};
+
+document.getElementById('acc-btn-refresh').addEventListener('click', function(){ loadAccountsData(); });
+document.getElementById('acc-search').addEventListener('input', renderAccTable);
+document.getElementById('acc-filter-type').addEventListener('change', renderAccTable);
+
+document.getElementById('acc-btn-add').addEventListener('click', function(){ showModal('acc-add-modal'); });
+document.getElementById('acc-add-cancel').addEventListener('click', function(){ hideModal('acc-add-modal'); });
+document.getElementById('acc-statement-close').addEventListener('click', function(){ hideModal('acc-statement-modal'); });
+
+document.getElementById('acc-add-save').addEventListener('click', function(){
+  var btn = this;
+  var payload = {
+    type:'موردين',
+    action:'add',
+    name: document.getElementById('acc-add-name').value.trim(),
+    account_type: document.getElementById('acc-add-type').value,
+    phone: document.getElementById('acc-add-phone').value.trim(),
+    address: document.getElementById('acc-add-address').value.trim(),
+    notes: document.getElementById('acc-add-notes').value.trim()
+  };
+  webhookPost(payload, btn, function(){
+    hideModal('acc-add-modal');
+    loadAccountsData();
+  });
+});
+
+/* ============================================================
+   EMPLOYEES PAGE
+   ============================================================ */
+var empData = [];
+
+function loadEmployeesData(){
+  webhookGet('موظفين', function(msg){
+    document.getElementById('emp-table-body').innerHTML = '<tr><td colspan="10">'+msg+'</td></tr>';
+  }, function(data){
+    empData = Array.isArray(data) ? data : (Array.isArray(data.data) ? data.data : []);
+    renderEmpTable();
+  });
+}
+
+function renderEmpTable(){
+  var search = (document.getElementById('emp-search').value||'').toLowerCase();
+  var monthF = document.getElementById('emp-filter-month').value;
+  var filtered = empData.filter(function(r){
+    var matchSearch = !search || (r.name||'').toLowerCase().includes(search);
+    return matchSearch;
+  });
+
+  var totalBase=0, totalDed=0, totalNet=0;
+  empData.forEach(function(r){
+    totalBase += parseFloat(r.base_salary)||0;
+    totalDed += parseFloat(r.deductions)||0;
+    totalNet += parseFloat(r.net_salary)||0;
+  });
+  document.getElementById('emp-kpi-total').textContent = empData.length;
+  document.getElementById('emp-kpi-base').innerHTML = '<span class="cur">ج.م</span>'+fmtMoney(totalBase);
+  document.getElementById('emp-kpi-deductions').innerHTML = '<span class="cur">ج.م</span>'+fmtMoney(totalDed);
+  document.getElementById('emp-kpi-net').innerHTML = '<span class="cur">ج.م</span>'+fmtMoney(totalNet);
+
+  var tbody = document.getElementById('emp-table-body');
+  if(!filtered.length){
+    tbody.innerHTML = '<tr><td colspan="10"><div class="table-empty">لا توجد بيانات موظفين</div></td></tr>';
+    return;
+  }
+  tbody.innerHTML = filtered.map(function(r){
+    var base = parseFloat(r.base_salary)||0;
+    var att = parseInt(r.attendance)||0;
+    var abs = parseInt(r.absences)||0;
+    var leaves = parseInt(r.leaves)||0;
+    var ded = parseFloat(r.deductions)||0;
+    var bonus = parseFloat(r.bonus)||0;
+    var workDays = parseInt(r.work_days)||26;
+    var dailyRate = base / workDays;
+    var netCalc = (dailyRate * att) + bonus - ded;
+    var net = parseFloat(r.net_salary)||netCalc;
+    return '<tr>'+
+      '<td><strong>'+escHtml(r.name||'—')+'</strong></td>'+
+      '<td style="color:var(--text-dim)">'+escHtml(r.job_title||'—')+'</td>'+
+      '<td>'+fmtMoney(base)+'</td>'+
+      '<td style="color:var(--ok-text)">'+att+'</td>'+
+      '<td style="color:var(--review)">'+abs+'</td>'+
+      '<td>'+leaves+'</td>'+
+      '<td style="color:var(--review)">'+fmtMoney(ded)+'</td>'+
+      '<td style="color:var(--ok-text)">'+fmtMoney(bonus)+'</td>'+
+      '<td><strong style="color:var(--accent)">'+fmtMoney(net)+'</strong></td>'+
+      '<td><button class="icon-btn btn-sm">تفاصيل</button></td>'+
+    '</tr>';
+  }).join('');
+}
+
+document.getElementById('emp-btn-refresh').addEventListener('click', function(){ loadEmployeesData(); });
+document.getElementById('emp-search').addEventListener('input', renderEmpTable);
+document.getElementById('emp-filter-month').addEventListener('change', renderEmpTable);
+
+document.getElementById('emp-btn-add').addEventListener('click', function(){
+  document.getElementById('emp-add-hire-date').value = new Date().toISOString().split('T')[0];
+  showModal('emp-add-modal');
+});
+document.getElementById('emp-add-cancel').addEventListener('click', function(){ hideModal('emp-add-modal'); });
+
+document.getElementById('emp-btn-payroll').addEventListener('click', function(){
+  var btn = this;
+  var payload = { type:'موظفين', action:'process_payroll', timestamp: new Date().toISOString() };
+  webhookPost(payload, btn, function(){ alert('تم إرسال طلب صرف المرتبات بنجاح.'); loadEmployeesData(); });
+});
+
+document.getElementById('emp-add-save').addEventListener('click', function(){
+  var btn = this;
+  var payload = {
+    type:'موظفين',
+    action:'add',
+    name: document.getElementById('emp-add-name').value.trim(),
+    job_title: document.getElementById('emp-add-job').value.trim(),
+    base_salary: parseFloat(document.getElementById('emp-add-base').value)||0,
+    phone: document.getElementById('emp-add-phone').value.trim(),
+    hire_date: document.getElementById('emp-add-hire-date').value,
+    work_days: parseInt(document.getElementById('emp-add-work-days').value)||26,
+    notes: document.getElementById('emp-add-notes').value.trim()
+  };
+  webhookPost(payload, btn, function(){
+    hideModal('emp-add-modal');
+    loadEmployeesData();
+  });
+});
+
+/* ============================================================
+   EXPENSES PAGE
+   ============================================================ */
+var expData = [];
+
+function loadExpensesData(){
+  webhookGet('مصاريف', function(msg){
+    document.getElementById('exp-table-body').innerHTML = '<tr><td colspan="8">'+msg+'</td></tr>';
+  }, function(data){
+    expData = Array.isArray(data) ? data : (Array.isArray(data.data) ? data.data : []);
+    renderExpTable();
+  });
+}
+
+function renderExpTable(){
+  var search = (document.getElementById('exp-search').value||'').toLowerCase();
+  var catF = document.getElementById('exp-filter-cat').value;
+  var filtered = expData.filter(function(r){
+    var matchCat = catF==='all' || r.category===catF;
+    var matchSearch = !search || (r.description||'').toLowerCase().includes(search);
+    return matchCat && matchSearch;
+  });
+
+  var cats = {نثريات:0, إيجار:0, ضرائب:0, مصاريف_تشغيل:0, total:0};
+  expData.forEach(function(r){
+    var v = parseFloat(r.amount)||0;
+    cats.total += v;
+    if(cats[r.category] !== undefined) cats[r.category] += v;
+    else cats['مصاريف_تشغيل'] += v;
+  });
+  document.getElementById('exp-kpi-total').innerHTML = '<span class="cur">ج.م</span>'+fmtMoney(cats.total);
+  document.getElementById('exp-kpi-misc').innerHTML = '<span class="cur">ج.م</span>'+fmtMoney(cats['نثريات']);
+  document.getElementById('exp-kpi-rent').innerHTML = '<span class="cur">ج.م</span>'+fmtMoney(cats['إيجار']);
+  document.getElementById('exp-kpi-ops').innerHTML = '<span class="cur">ج.م</span>'+fmtMoney(cats['ضرائب']+cats['مصاريف_تشغيل']);
+
+  var tbody = document.getElementById('exp-table-body');
+  if(!filtered.length){
+    tbody.innerHTML = '<tr><td colspan="8"><div class="table-empty">لا توجد بيانات مصاريف</div></td></tr>';
+    return;
+  }
+  tbody.innerHTML = filtered.map(function(r){
+    var catLabel = {نثريات:'نثريات', إيجار:'إيجار', ضرائب:'ضرائب', مصاريف_تشغيل:'مصاريف تشغيل', أخرى:'أخرى'}[r.category] || r.category;
+    return '<tr>'+
+      '<td>'+escHtml(r.date||'—')+'</td>'+
+      '<td>'+escHtml(r.description||'—')+'</td>'+
+      '<td><span class="badge payable">'+escHtml(catLabel)+'</span></td>'+
+      '<td><strong>'+fmtMoney(r.amount)+'</strong></td>'+
+      '<td>'+escHtml(r.payment_method||'—')+'</td>'+
+      '<td>'+escHtml(r.responsible||'—')+'</td>'+
+      '<td style="color:var(--text-dim); max-width:160px; white-space:normal; font-size:12.5px;">'+escHtml(r.notes||'—')+'</td>'+
+      '<td><button class="icon-btn btn-sm">تعديل</button></td>'+
+    '</tr>';
+  }).join('');
+}
+
+document.getElementById('exp-btn-refresh').addEventListener('click', function(){ loadExpensesData(); });
+document.getElementById('exp-search').addEventListener('input', renderExpTable);
+document.getElementById('exp-filter-cat').addEventListener('change', renderExpTable);
+
+document.getElementById('exp-btn-add').addEventListener('click', function(){
+  document.getElementById('exp-add-date').value = new Date().toISOString().split('T')[0];
+  showModal('exp-add-modal');
+});
+document.getElementById('exp-add-cancel').addEventListener('click', function(){ hideModal('exp-add-modal'); });
+
+document.getElementById('exp-add-save').addEventListener('click', function(){
+  var btn = this;
+  var payload = {
+    type:'مصاريف',
+    action:'add',
+    date: document.getElementById('exp-add-date').value,
+    description: document.getElementById('exp-add-desc').value.trim(),
+    category: document.getElementById('exp-add-category').value,
+    amount: parseFloat(document.getElementById('exp-add-amount').value)||0,
+    payment_method: document.getElementById('exp-add-payment').value,
+    responsible: document.getElementById('exp-add-responsible').value.trim(),
+    notes: document.getElementById('exp-add-notes').value.trim()
+  };
+  webhookPost(payload, btn, function(){
+    hideModal('exp-add-modal');
+    loadExpensesData();
+  });
+});
+
+/* ============================================================
+   REPORTS PAGE
+   ============================================================ */
+var activeReport = 'income';
+
+function showReport(name){
+  activeReport = name;
+  ['income','balance','inventory','customers','suppliers'].forEach(function(r){
+    var el = document.getElementById('rep-'+r+'-section');
+    if(el) el.style.display = r===name?'block':'none';
+  });
+}
+
+document.getElementById('rep-btn-income').addEventListener('click', function(){ showReport('income'); loadReportsData('income'); });
+document.getElementById('rep-btn-balance').addEventListener('click', function(){ showReport('balance'); loadReportsData('balance'); });
+document.getElementById('rep-btn-inventory').addEventListener('click', function(){ showReport('inventory'); loadReportsData('inventory'); });
+document.getElementById('rep-btn-customers').addEventListener('click', function(){ showReport('customers'); loadReportsData('customers'); });
+document.getElementById('rep-btn-suppliers').addEventListener('click', function(){ showReport('suppliers'); loadReportsData('suppliers'); });
+document.getElementById('rep-btn-refresh').addEventListener('click', function(){ loadReportsData(activeReport); });
+
+function loadReportsData(reportType){
+  webhookGet('تقارير', null, function(data){
+    var rep = data[reportType] || data || {};
+    renderReport(reportType, rep);
+  });
+}
+
+function renderReport(type, data){
+  if(type==='income'){
+    var items = Array.isArray(data.items) ? data.items : [];
+    var revenue = parseFloat(data.total_revenue)||0;
+    var costs = parseFloat(data.total_costs)||0;
+    var net = revenue - costs;
+    document.getElementById('rep-revenue').innerHTML = '<span class="cur">ج.م</span>'+fmtMoney(revenue);
+    document.getElementById('rep-costs').innerHTML = '<span class="cur">ج.م</span>'+fmtMoney(costs);
+    document.getElementById('rep-net').innerHTML = '<span class="cur">ج.م</span><span style="color:'+(net>=0?'var(--receivable)':'var(--review)')+'">'+fmtMoney(net)+'</span>';
+    var tbody = document.getElementById('rep-income-body');
+    if(!items.length){
+      tbody.innerHTML = '<tr><td colspan="3"><div class="table-empty">لا توجد بيانات</div></td></tr>'; return;
+    }
+    tbody.innerHTML = items.map(function(r){
+      return '<tr><td>'+escHtml(r.label||'—')+'</td><td><span class="badge '+(r.category==='إيراد'?'receivable':'payable')+'">'+escHtml(r.category||'—')+'</span></td><td><strong>'+fmtMoney(r.amount)+'</strong></td></tr>';
+    }).join('');
+  } else if(type==='balance'){
+    var items2 = Array.isArray(data) ? data : (Array.isArray(data.items)?data.items:[]);
+    var tbody2 = document.getElementById('rep-balance-body');
+    if(!items2.length){ tbody2.innerHTML = '<tr><td colspan="3"><div class="table-empty">لا توجد بيانات</div></td></tr>'; return; }
+    tbody2.innerHTML = items2.map(function(r){
+      return '<tr><td>'+escHtml(r.label||'—')+'</td><td>'+escHtml(r.category||'—')+'</td><td><strong>'+fmtMoney(r.amount)+'</strong></td></tr>';
+    }).join('');
+  } else if(type==='inventory'){
+    var items3 = Array.isArray(data) ? data : (Array.isArray(data.items)?data.items:[]);
+    var tbody3 = document.getElementById('rep-inventory-body');
+    if(!items3.length){ tbody3.innerHTML = '<tr><td colspan="5"><div class="table-empty">لا توجد بيانات</div></td></tr>'; return; }
+    tbody3.innerHTML = items3.map(function(r){
+      var val = (parseFloat(r.qty)||0)*(parseFloat(r.unit_price)||0);
+      return '<tr><td>'+escHtml(r.item||'—')+'</td><td>'+escHtml(r.store_type||'—')+'</td><td>'+fmtMoney(r.qty)+'</td><td>'+fmtMoney(r.unit_price)+'</td><td><strong>'+fmtMoney(val)+'</strong></td></tr>';
+    }).join('');
+  } else if(type==='customers'){
+    var items4 = Array.isArray(data) ? data : (Array.isArray(data.items)?data.items:[]);
+    var tbody4 = document.getElementById('rep-customers-body');
+    if(!items4.length){ tbody4.innerHTML = '<tr><td colspan="4"><div class="table-empty">لا توجد بيانات</div></td></tr>'; return; }
+    tbody4.innerHTML = items4.map(function(r){
+      return '<tr><td>'+escHtml(r.name||'—')+'</td><td>'+fmtMoney(r.total_invoices)+'</td><td>'+fmtMoney(r.total_paid)+'</td><td><strong style="color:var(--accent)">'+fmtMoney(r.balance)+'</strong></td></tr>';
+    }).join('');
+  } else if(type==='suppliers'){
+    var items5 = Array.isArray(data) ? data : (Array.isArray(data.items)?data.items:[]);
+    var tbody5 = document.getElementById('rep-suppliers-body');
+    if(!items5.length){ tbody5.innerHTML = '<tr><td colspan="4"><div class="table-empty">لا توجد بيانات</div></td></tr>'; return; }
+    tbody5.innerHTML = items5.map(function(r){
+      return '<tr><td>'+escHtml(r.name||'—')+'</td><td>'+fmtMoney(r.total_invoices)+'</td><td>'+fmtMoney(r.total_paid)+'</td><td><strong style="color:var(--accent)">'+fmtMoney(r.balance)+'</strong></td></tr>';
+    }).join('');
+  }
+}
 
 })();
 </script>
