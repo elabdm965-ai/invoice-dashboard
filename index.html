@@ -864,21 +864,19 @@
         <table>
           <thead>
             <tr>
-              <th data-col="vendor_name">اسم المورد<span class="arrow" id="arrow-vendor_name"></span></th>
               <th data-col="invoice_number">رقم الفاتورة<span class="arrow" id="arrow-invoice_number"></span></th>
-              <th data-col="document_type">نوع المستند<span class="arrow" id="arrow-document_type"></span></th>
+              <th data-col="invoice_type">نوع المستند<span class="arrow" id="arrow-invoice_type"></span></th>
               <th data-col="direction">الاتجاه<span class="arrow" id="arrow-direction"></span></th>
-              <th data-col="total_amount">المبلغ الإجمالي<span class="arrow" id="arrow-total_amount"></span></th>
+              <th data-col="total">المبلغ الإجمالي<span class="arrow" id="arrow-total"></span></th>
               <th data-col="currency">العملة<span class="arrow" id="arrow-currency"></span></th>
               <th data-col="invoice_date">تاريخ الفاتورة<span class="arrow" id="arrow-invoice_date"></span></th>
               <th data-col="needs_review">تحتاج مراجعة<span class="arrow" id="arrow-needs_review"></span></th>
               <th>سبب المراجعة</th>
-              <th>Unicode</th>
               <th>إجراءات</th>
             </tr>
           </thead>
           <tbody id="table-body">
-            <tr><td colspan="11">
+            <tr><td colspan="9">
               <div class="table-empty" id="initial-empty">
                 لم يتم إعداد رابط Webhook بعد. الرجاء الذهاب إلى صفحة الإعدادات لإدخال الرابط.
               </div>
@@ -1946,16 +1944,7 @@
   </div>
 </div>
 
-<!-- ================= UNICODE VIEW MODAL ================= -->
-<div class="modal-overlay" id="unicode-modal-overlay">
-  <div class="modal" style="max-width:440px;">
-    <h2 class="modal-title">Unicode</h2>
-    <p id="unicode-modal-text" style="margin:0; line-height:1.7; word-break:break-word;"></p>
-    <div class="modal-actions">
-      <button class="btn" id="btn-unicode-close">إغلاق</button>
-    </div>
-  </div>
-</div>
+
 
 <script>
 /* ============================================================
@@ -2063,16 +2052,6 @@ function unwrapPayload(raw){
     return html;
   }
 
-  function renderUnicodeCell(value, rowNumber){
-    var text = nullSafeText(value);
-    if (!text) return '<span class="cell-muted">—</span>';
-    var html = '<div class="reason-text">' + escapeHtml(text) + '</div>';
-    if (text.length > 40){
-      html += '<button class="icon-btn btn-view-unicode" data-row="' + rowNumber + '">عرض الكل</button>';
-    }
-    return html;
-  }
-
   // ---------- settings ----------
   function getSettings(){
     try{
@@ -2153,15 +2132,41 @@ function unwrapPayload(raw){
 
   // ---------- data fetch ----------
   function setTableMessage(html){
-    document.getElementById('table-body').innerHTML = '<tr><td colspan="11">' + html + '</td></tr>';
+    document.getElementById('table-body').innerHTML = '<tr><td colspan="9">' + html + '</td></tr>';
     document.getElementById('pagination').style.display = 'none';
   }
 
   function applyDashboardPayload(data){
-    state.invoices = dedupeByRow(extractRecords(data, 'invoices'));
+    // n8n بيبعت array — نوصل للبيانات بـ data[0]
+    var payload = Array.isArray(data) ? (data[0] || {}) : (data || {});
+
+    // استخراج الفواتير من data[0].invoices
+    var invoices = Array.isArray(payload.invoices) ? payload.invoices : [];
+    state.invoices = invoices;
     state.isLoading = false;
     state.loadFailed = false;
     state.page = 1;
+
+    // ── KPI Cards ──────────────────────────────────────────────
+    var incomeStatement = payload.income_statement || {};
+
+    // إجمالي الفواتير = عدد عناصر invoices
+    var totalCount = invoices.length;
+
+    // مستحق لنا = income_statement.إجمالي_المبيعات
+    var receivableVal = parseAmount(incomeStatement['إجمالي_المبيعات']);
+
+    // مستحق علينا = income_statement.إجمالي_المشتريات
+    var payableVal = parseAmount(incomeStatement['إجمالي_المشتريات']);
+
+    // تحتاج مراجعة = عدد الفواتير التي needs_review === true
+    var reviewCount = invoices.filter(function(inv){ return inv.needs_review === true; }).length;
+
+    document.getElementById('kpi-total').textContent = totalCount.toLocaleString('en-US');
+    document.getElementById('kpi-receivable').innerHTML = '<span class="cur">ج.م</span>' + formatAmount(receivableVal);
+    document.getElementById('kpi-payable').innerHTML = '<span class="cur">ج.م</span>' + formatAmount(payableVal);
+    document.getElementById('kpi-review').textContent = reviewCount.toLocaleString('en-US');
+
     var now = new Date();
     document.getElementById('last-updated').textContent = 'آخر تحديث: ' + now.toLocaleString('en-US');
     applyFiltersAndRender();
@@ -2219,7 +2224,7 @@ function unwrapPayload(raw){
       if (f.review === "no" && needsReview) return false;
     }
 
-    if (f.docType !== "all" && item.document_type !== f.docType) return false;
+    if (f.docType !== "all" && item.invoice_type !== f.docType && item.document_type !== f.docType) return false;
 
     if (f.dateFrom){
       if (isNullish(item.invoice_date) || item.invoice_date < f.dateFrom) return false;
@@ -2252,8 +2257,10 @@ function unwrapPayload(raw){
     state.filtered.sort(function(a, b){
       var av = a[col], bv = b[col];
 
-      if (col === "total_amount"){
-        av = parseAmount(av); bv = parseAmount(bv);
+      if (col === "total"){
+        // دعم الحقل الجديد total مع fallback لـ total_amount
+        av = parseAmount(a.total != null ? a.total : a.total_amount);
+        bv = parseAmount(b.total != null ? b.total : b.total_amount);
         return (av - bv) * dir;
       }
       if (col === "needs_review"){
@@ -2270,21 +2277,10 @@ function unwrapPayload(raw){
   }
 
   // ---------- KPIs ----------
+  // القيم الأساسية (مستحق لنا / علينا / مراجعة) تُحسب من income_statement
+  // في applyDashboardPayload — هنا بس نحدّث عداد الفواتير بعد الفلترة.
   function renderKPIs(list){
-    var total = list.length;
-    var payableSum = 0, receivableSum = 0, reviewCount = 0;
-
-    list.forEach(function(item){
-      var amt = parseAmount(item.total_amount);
-      if (item.direction === "payable") payableSum += amt;
-      if (item.direction === "receivable") receivableSum += amt;
-      if (item.needs_review === true) reviewCount++;
-    });
-
-    document.getElementById('kpi-total').textContent = total.toLocaleString('en-US');
-    document.getElementById('kpi-payable').textContent = formatAmount(payableSum);
-    document.getElementById('kpi-receivable').textContent = formatAmount(receivableSum);
-    document.getElementById('kpi-review').textContent = reviewCount.toLocaleString('en-US');
+    document.getElementById('kpi-total').textContent = list.length.toLocaleString('en-US');
   }
 
   // ---------- table rendering ----------
@@ -2306,26 +2302,31 @@ function unwrapPayload(raw){
     var start = (state.page - 1) * state.pageSize;
     var pageItems = state.filtered.slice(start, start + state.pageSize);
 
-    var rows = pageItems.map(function(item){
-      var dirLabel = item.direction === "payable" ? "مستحق علينا" : (item.direction === "receivable" ? "مستحق لنا" : "");
+    var rows = pageItems.map(function(item, idx){
+      var rowKey = item.row_number != null ? item.row_number : idx;
+      var dirLabel = item.direction === "payable" ? "مستحق علينا" : (item.direction === "receivable" ? "مستحق لنا" : nullSafeText(item.direction));
       var dirClass = item.direction === "payable" ? "payable" : "receivable";
-      var docLabel = DOC_TYPE_LABELS[item.document_type] || nullSafeText(item.document_type);
+      // invoice_type — الحقل الجديد (يستخدم DOC_TYPE_LABELS كـ fallback)
+      var docLabel = DOC_TYPE_LABELS[item.invoice_type] || nullSafeText(item.invoice_type) ||
+                     DOC_TYPE_LABELS[item.document_type] || nullSafeText(item.document_type);
       var reviewYes = item.needs_review === true;
-      var amount = parseAmount(item.total_amount);
+      // total — الحقل الجديد (يستخدم total_amount كـ fallback)
+      var totalVal = item.total != null ? item.total : item.total_amount;
+      var amount = parseAmount(totalVal);
 
       return (
         '<tr>' +
-        '<td>' + escapeHtml(nullSafeText(item.vendor_name)) + '</td>' +
         '<td>' + escapeHtml(nullSafeText(item.invoice_number)) + '</td>' +
         '<td>' + escapeHtml(docLabel) + '</td>' +
         '<td><span class="badge ' + dirClass + '">' + dirLabel + '</span></td>' +
-        '<td>' + (isNullish(item.total_amount) ? '<span class="cell-muted">—</span>' : formatAmount(amount)) + '</td>' +
+        '<td>' + (isNullish(totalVal) ? '<span class="cell-muted">—</span>' : formatAmount(amount)) + '</td>' +
         '<td>' + escapeHtml(nullSafeText(item.currency)) + '</td>' +
         '<td>' + escapeHtml(nullSafeText(item.invoice_date)) + '</td>' +
-        '<td><span class="badge ' + (reviewYes ? 'review-yes' : 'review-no') + '">' + (reviewYes ? 'نعم' : 'لا') + '</span></td>' +
-        '<td class="reason-cell">' + renderReasonCell(item.review_reason, item.row_number) + '</td>' +
-        '<td class="reason-cell">' + renderUnicodeCell(item.unicode, item.row_number) + '</td>' +
-        '<td><button class="icon-btn btn-edit-row" data-row="' + item.row_number + '">تعديل</button></td>' +
+        '<td>' + (reviewYes
+          ? '<span style="color:var(--review); font-weight:700;">نعم</span>'
+          : '<span style="color:var(--text-faint);">—</span>') + '</td>' +
+        '<td class="reason-cell">' + renderReasonCell(item.review_reason, rowKey) + '</td>' +
+        '<td><button class="icon-btn btn-edit-row" data-row="' + rowKey + '">تعديل</button></td>' +
         '</tr>'
       );
     }).join('');
@@ -2341,20 +2342,11 @@ function unwrapPayload(raw){
     document.querySelectorAll('.btn-view-reason').forEach(function(btn){
       btn.addEventListener('click', function(){
         var rowNumber = parseInt(btn.getAttribute('data-row'), 10);
-        var item = state.invoices.find(function(i){ return i.row_number === rowNumber; });
+        var item = state.invoices.find(function(i){ return i.row_number === rowNumber; }) ||
+                   state.invoices[rowNumber];
         if (!item) return;
         document.getElementById('reason-modal-text').textContent = nullSafeText(item.review_reason);
         document.getElementById('reason-modal-overlay').classList.add('active');
-      });
-    });
-
-    document.querySelectorAll('.btn-view-unicode').forEach(function(btn){
-      btn.addEventListener('click', function(){
-        var rowNumber = parseInt(btn.getAttribute('data-row'), 10);
-        var item = state.invoices.find(function(i){ return i.row_number === rowNumber; });
-        if (!item) return;
-        document.getElementById('unicode-modal-text').textContent = nullSafeText(item.unicode);
-        document.getElementById('unicode-modal-overlay').classList.add('active');
       });
     });
 
@@ -2554,15 +2546,6 @@ function unwrapPayload(raw){
   document.getElementById('btn-reason-close').addEventListener('click', closeReasonModal);
   document.getElementById('reason-modal-overlay').addEventListener('click', function(e){
     if (e.target === this) closeReasonModal();
-  });
-
-  function closeUnicodeModal(){
-    document.getElementById('unicode-modal-overlay').classList.remove('active');
-  }
-
-  document.getElementById('btn-unicode-close').addEventListener('click', closeUnicodeModal);
-  document.getElementById('unicode-modal-overlay').addEventListener('click', function(e){
-    if (e.target === this) closeUnicodeModal();
   });
 
   document.getElementById('btn-add-save').addEventListener('click', function(){
